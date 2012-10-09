@@ -60,12 +60,12 @@ describe "benchmarks" do
     @db = Falconer::DB.new DB_PATH
   end
 
-  bench_performance_constant "inserting keys" do |n|
-    n.times {|i| @db[i] = 'i' * i }
+  bench_performance_constant "keys with sync" do |n|
+    n.times {|i| @db.set(i, 'i' * i, true) }
   end
 
-  bench_performance_constant "keys with sync" do |n|
-    n.times {|i| @db.set(i, 'n' * i, true) }
+  bench_performance_constant "inserting keys" do |n|
+    n.times {|i| @db[i] = 'i' * i }
   end
 
   bench_performance_constant "reading keys" do |n|

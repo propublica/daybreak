@@ -3,7 +3,6 @@ module Falconer
     def initialize(file)
       @fd = File.open file, 'a'
       @fd.binmode
-      @fd.sync = true
       @worker = Worker.new(@fd)
     end
 
@@ -51,9 +50,7 @@ module Falconer
           end
           read, write = IO.select [], [@fd]
           if write and fd = write.first
-            lock @fd, File::LOCK_EX do
-              @fd.write(str)
-            end
+            lock(@fd, File::LOCK_EX) { fd.write(str) }
           end
         end
       end
