@@ -38,10 +38,6 @@ module Falconer
       Array(Zlib.crc32(byte_string, 0)).pack('N')
     end
 
-    def num_bytes
-      byte_string.length
-    end
-
     private
 
     def read_bytes(io)

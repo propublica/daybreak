@@ -21,6 +21,7 @@ describe "database functions" do
     assert @db.has_key?(1)
     @db[1] = '2'
     assert_equal @db[1], '2'
+    assert_equal @db.length, 1
   end
 
   it "should persist values" do
@@ -65,7 +66,7 @@ describe "benchmarks" do
   end
 
   bench_performance_constant "keys with sync" do |n|
-    n.times {|i| @db.set(n, 'n' * n, true) }
+    n.times {|i| @db.set(i, 'n' * i, true) }
   end
 
   bench_performance_constant "reading keys" do |n|
