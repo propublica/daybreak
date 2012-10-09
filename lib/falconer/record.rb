@@ -30,6 +30,8 @@ module Falconer
       byte_string + crc_string
     end
 
+    private
+
     def byte_string
       @byte_string ||= part(@key) + part(@data)
     end
@@ -37,8 +39,6 @@ module Falconer
     def crc_string
       Array(Zlib.crc32(byte_string, 0)).pack('N')
     end
-
-    private
 
     def read_bytes(io)
       raw = io.read(4)

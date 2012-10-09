@@ -58,7 +58,6 @@ end
 describe "benchmarks" do
   before do
     @db = Falconer::DB.new DB_PATH
-    1000.times {|i| @db[i] = i }
   end
 
   bench_performance_constant "inserting keys" do |n|
