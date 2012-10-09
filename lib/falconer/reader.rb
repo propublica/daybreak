@@ -6,6 +6,7 @@ module Falconer
     def initialize(file)
       @fd = File.open file, 'r'
       @fd.binmode
+      @fd.advise :sequential
     end
 
     def read(&blk)
