@@ -21,13 +21,13 @@ module Falconer
       self
     end
 
-    def self.read(io)
-      new.read(io)
-    end
-
     def representation
       raise UnnacceptableDataError, "key and data must be defined" if @key.nil? || @data.nil?
       byte_string + crc_string
+    end
+
+    def self.read(io)
+      new.read(io)
     end
 
     private
