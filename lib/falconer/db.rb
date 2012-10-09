@@ -9,9 +9,10 @@ module Falconer
       read_all!
     end
 
-    def []=(key, value)
+    def []=(key, value, sync = false)
       key = key.to_s
       @writer.write(Record.new(key, serialize(value)))
+      flush! if sync
       @table[key] = value
     end
     alias_method :set, :"[]="
@@ -74,7 +75,7 @@ module Falconer
 
     def compact!
       tmp_file = Tempfile.new File.basename(@file_name)
-      copy_db  = Db.new tmp_file.path
+      copy_db  = DB.new tmp_file.path
 
       each do |key, i|
         copy_db.set(key, get(key))

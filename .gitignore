@@ -1,0 +1,3 @@
+*.db
+coverage
+.DS_Store
