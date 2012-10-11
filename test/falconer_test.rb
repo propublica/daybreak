@@ -26,9 +26,12 @@ describe "database functions" do
 
   it "should persist values" do
     @db.set('1', '4', true)
+    @db.set('4', '1', true)
+
     assert_equal @db['1'], '4'
     db2 = Falconer::DB.new DB_PATH
     assert_equal db2['1'], '4'
+    assert_equal db2['4'], '1'
   end
 
   it "should compact cleanly" do

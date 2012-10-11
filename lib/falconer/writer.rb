@@ -14,6 +14,10 @@ module Falconer
       @worker.finish!
     end
 
+    def flush!
+      @worker.flush!
+    end
+
     def close!
       finish!
       @fd.close
@@ -53,6 +57,12 @@ module Falconer
             lock(@fd, File::LOCK_EX) { fd.write(str) }
           end
         end
+      end
+
+      def flush!
+        @queue.push nil
+        @thread.join
+        @thread = Thread.new { work }
       end
 
       def finish!

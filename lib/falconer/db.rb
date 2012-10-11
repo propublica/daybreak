@@ -61,7 +61,7 @@ module Falconer
     end
 
     def flush!
-      @writer.finish!
+      @writer.flush!
     end
 
     def reset!
