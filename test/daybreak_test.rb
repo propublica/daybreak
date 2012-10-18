@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'simplecov'
 SimpleCov.start
+SimpleCov.command_name "Unit tests"
 
 require 'minitest/autorun'
 require 'minitest/benchmark'
@@ -61,6 +62,9 @@ end
 describe "benchmarks" do
   before do
     @db = Daybreak::DB.new DB_PATH
+    1000.times {|i| @db[i] = i }
+    @db.flush!
+    @db = Daybreak::DB.new DB_PATH
   end
 
   bench_performance_constant "keys with sync" do |n|
@@ -72,7 +76,9 @@ describe "benchmarks" do
   end
 
   bench_performance_constant "reading keys" do |n|
-    n.times {|i| @db[n % 1000] }
+    n.times {|i|
+      assert_equal i % 1000, @db[i % 1000]
+    }
   end
 
   after do
