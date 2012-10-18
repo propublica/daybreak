@@ -1,4 +1,4 @@
-module Falconer
+module Daybreak
   class Writer
     def initialize(file)
       @fd = File.open file, 'a'

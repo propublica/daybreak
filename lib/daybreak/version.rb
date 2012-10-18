@@ -1,3 +1,3 @@
-module Falconer
+module Daybreak
   VERSION = "0.0.1"
 end

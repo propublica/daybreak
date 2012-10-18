@@ -1,4 +1,4 @@
-module Falconer
+module Daybreak
   module Locking
     def lock(fd, lock=File::LOCK_SH)
       fd.flock lock

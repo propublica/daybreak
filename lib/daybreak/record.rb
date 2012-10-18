@@ -1,4 +1,4 @@
-module Falconer
+module Daybreak
   class Record
     class UnnacceptableDataError < Exception; end
     class CorruptDataError < Exception; end

@@ -1,4 +1,4 @@
-module Falconer
+module Daybreak
   # Single use class for building out the table
   class Reader
     class SingleUseError < Exception; end

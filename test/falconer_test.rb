@@ -12,7 +12,7 @@ require File.join HERE, '..', 'lib', 'falconer'
 
 describe "database functions" do
   before do
-    @db = Falconer::DB.new DB_PATH
+    @db = Daybreak::DB.new DB_PATH
   end
 
   it "should insert" do
@@ -29,7 +29,7 @@ describe "database functions" do
     @db.set('4', '1', true)
 
     assert_equal @db['1'], '4'
-    db2 = Falconer::DB.new DB_PATH
+    db2 = Daybreak::DB.new DB_PATH
     assert_equal db2['1'], '4'
     assert_equal db2['4'], '1'
   end
@@ -45,7 +45,7 @@ describe "database functions" do
   end
 
   it "should allow for default values" do
-    default_db = Falconer::DB.new(DB_PATH, 0)
+    default_db = Daybreak::DB.new(DB_PATH, 0)
     assert_equal default_db[1], 0
     default_db[1] = 1
     assert_equal default_db[1], 1
@@ -60,7 +60,7 @@ end
 
 describe "benchmarks" do
   before do
-    @db = Falconer::DB.new DB_PATH
+    @db = Daybreak::DB.new DB_PATH
   end
 
   bench_performance_constant "keys with sync" do |n|

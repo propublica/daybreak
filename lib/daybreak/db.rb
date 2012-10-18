@@ -1,4 +1,4 @@
-module Falconer
+module Daybreak
   class DB
     include Enumerable
 
@@ -66,7 +66,7 @@ module Falconer
 
     def reset!
       @table  = {}
-      @writer = Falconer::Writer.new(@file_name)
+      @writer = Daybreak::Writer.new(@file_name)
     end
 
     def close!
