@@ -5,9 +5,9 @@ end
 require 'tempfile'
 require 'thread'
 require 'zlib'
-require "#{Daybreak::ROOT}/falconer/version"
-require "#{Daybreak::ROOT}/falconer/locking"
-require "#{Daybreak::ROOT}/falconer/record"
-require "#{Daybreak::ROOT}/falconer/writer"
-require "#{Daybreak::ROOT}/falconer/reader"
-require "#{Daybreak::ROOT}/falconer/db"
+require "#{Daybreak::ROOT}/daybreak/version"
+require "#{Daybreak::ROOT}/daybreak/locking"
+require "#{Daybreak::ROOT}/daybreak/record"
+require "#{Daybreak::ROOT}/daybreak/writer"
+require "#{Daybreak::ROOT}/daybreak/reader"
+require "#{Daybreak::ROOT}/daybreak/db"

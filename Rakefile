@@ -2,6 +2,6 @@
 require "bundler/gem_tasks"
 
 task :default do
-  require "./test/falconer_test.rb"
+  require "./test/daybreak_test.rb"
 end
 

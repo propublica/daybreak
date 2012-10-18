@@ -8,7 +8,7 @@ require 'minitest/benchmark'
 HERE = File.expand_path(File.dirname(__FILE__))
 DB_PATH = File.join HERE, "test.db"
 
-require File.join HERE, '..', 'lib', 'falconer'
+require File.join HERE, '..', 'lib', 'daybreak'
 
 describe "database functions" do
   before do
