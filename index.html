@@ -205,9 +205,10 @@ $ gem install daybreak
     </p>
 
     <p>
+      Writes with duplicate keys are simply appended to the end of the file.
       From time to time you will want to run <tt>compact!</tt> which will remove
       old commits from the file and create a serialized copy of the in memory hash
-      table.
+      table. This shrinks the space necessary to store the data.
     </p>
 
     <h2>File Format</h2>
