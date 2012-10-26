@@ -3,6 +3,10 @@ module Daybreak
     def initialize(file)
       @fd = File.open file, 'a'
       @fd.binmode
+
+      f = @fd.fcntl(Fcntl::F_GETFL, 0)
+      @fd.fcntl(Fcntl::F_SETFL, Fcntl::O_NONBLOCK | f)
+
       @worker = Worker.new(@fd)
     end
 
@@ -45,18 +49,33 @@ module Daybreak
       end
 
       def work
-        str = ""
+        buf = ""
         loop do
           str = @queue.pop
           if str.nil?
             @fd.flush
             break
           end
+          buf << str
           read, write = IO.select [], [@fd]
           if write and fd = write.first
-            lock(@fd, File::LOCK_EX) { fd.write(str) }
+            lock(fd, File::LOCK_EX) { buf = try_write fd, buf }
           end
         end
+      end
+
+      def try_write(fd, buf)
+        begin
+          s = fd.write_nonblock(buf)
+          if s < buf.length
+            buf = buf[s..-1] # didn't finish
+          else
+            buf = ""
+          end
+        rescue Errno::EAGAIN
+          buf = buf # try this again
+        end
+        buf
       end
 
       def flush!

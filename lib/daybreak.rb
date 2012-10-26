@@ -5,6 +5,8 @@ end
 require 'tempfile'
 require 'thread'
 require 'zlib'
+require 'fcntl'
+
 require "#{Daybreak::ROOT}/daybreak/version"
 require "#{Daybreak::ROOT}/daybreak/locking"
 require "#{Daybreak::ROOT}/daybreak/record"
