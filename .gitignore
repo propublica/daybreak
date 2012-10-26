@@ -3,3 +3,4 @@ coverage
 .DS_Store
 .yardoc
 Gemfile.lock
+*.rbc
