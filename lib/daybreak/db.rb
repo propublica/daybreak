@@ -1,7 +1,13 @@
 module Daybreak
+  # Daybreak::DB contains the public api for Daybreak, you may extend it like
+  # any other Ruby class (i.e. to overwrite serialize and parse). It includes
+  # Enumerable for functional goodies like map, each, reduce and friends.
   class DB
     include Enumerable
 
+    # Create a new Daybreak::DB. The second argument is the default value
+    # to store when accessing a previously unset key, this follows the
+    # Hash standard.
     def initialize(file, default=nil)
       @file_name = file
       reset!
@@ -9,6 +15,8 @@ module Daybreak
       read_all!
     end
 
+    # Set a key in the database to be written at some future date. If the data
+    # needs to be persisted immediately, call db.set(key, value, true).
     def []=(key, value, sync = false)
       key = key.to_s
       @writer.write(Record.new(key, serialize(value)))
@@ -17,6 +25,8 @@ module Daybreak
     end
     alias_method :set, :"[]="
 
+    # Retrieve a value at key from the database. If the default value was specified
+    # when this database was created, that value will be set and returned.
     def [](key)
       key = key.to_s
       if @table.has_key? key
