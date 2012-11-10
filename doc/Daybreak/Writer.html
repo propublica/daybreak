@@ -6,7 +6,7 @@
 <title>
   Class: Daybreak::Writer
   
-    &mdash; Documentation by YARD 0.8.3
+    &mdash; Documentation by YARD 0.7.5
   
 </title>
 
@@ -15,11 +15,9 @@
   <link rel="stylesheet" href="../css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  hasFrames = window.top.frames.main ? true : false;
-  relpath = '../';
-  framesUrl = "../frames.html#!" + escape(window.location.href);
+  relpath = '..';
+  if (relpath != '') relpath += '/';
 </script>
-
 
   <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
 
@@ -28,41 +26,36 @@
 
   </head>
   <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
     <div id="header">
       <div id="menu">
   
-    <a href="../_index.html">Index (W)</a> &raquo;
+    <a href="../_index.html">Index (W)</a> &raquo; 
     <span class='title'><span class='object_link'><a href="../Daybreak.html" title="Daybreak (module)">Daybreak</a></span></span>
      &raquo; 
     <span class="title">Writer</span>
   
-
+  
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a class="full_list_link" id="class_list_link"
-        href="../class_list.html">
-      Class List
-    </a>
+    <a id="class_list_link" href="#">Class List</a>
   
-    <a class="full_list_link" id="method_list_link"
-        href="../method_list.html">
-      Method List
-    </a>
+    <a id="method_list_link" href="#">Method List</a>
   
-    <a class="full_list_link" id="file_list_link"
-        href="../file_list.html">
-      File List
-    </a>
+    <a id="file_list_link" href="#">File List</a>
   
 </div>
       <div class="clear"></div>
     </div>
-
+    
     <iframe id="search_frame"></iframe>
-
+    
     <div id="content"><h1>Class: Daybreak::Writer
   
   
@@ -99,6 +92,28 @@
 </dl>
 <div class="clear"></div>
 
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    
+<p>Writer's handle the actually fiddly task of committing data to disk. They
+have a Worker instance that writes in a select loop.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><h2>Defined Under Namespace</h2>
+<p class="children">
+   
+    
+   
+    
+      <strong class="classes">Classes:</strong> <span class='object_link'><a href="Writer/Worker.html" title="Daybreak::Writer::Worker (class)">Worker</a></span>
+    
+  
+</p>
 
 
 
@@ -128,10 +143,11 @@
   
   
   
-  
 
   
-    <span class="summary_desc"><div class='inline'></div></span>
+    <span class="summary_desc"><div class='inline'>
+<p>Finish writing and close the file descriptor.</p>
+</div></span>
   
 </li>
 
@@ -150,10 +166,11 @@
   
   
   
-  
 
   
-    <span class="summary_desc"><div class='inline'></div></span>
+    <span class="summary_desc"><div class='inline'>
+<p>Finish writing.</p>
+</div></span>
   
 </li>
 
@@ -172,10 +189,11 @@
   
   
   
-  
 
   
-    <span class="summary_desc"><div class='inline'></div></span>
+    <span class="summary_desc"><div class='inline'>
+<p>Flush pending commits, and restart the worker.</p>
+</div></span>
   
 </li>
 
@@ -189,7 +207,6 @@
     
   </span>
   
-  
     <span class="note title constructor">constructor</span>
   
   
@@ -200,7 +217,7 @@
 
   
     <span class="summary_desc"><div class='inline'>
-<p>A new instance of Writer.</p>
+<p>Open up the file, ready it for binary and nonblocking writing.</p>
 </div></span>
   
 </li>
@@ -220,10 +237,11 @@
   
   
   
-  
 
   
-    <span class="summary_desc"><div class='inline'></div></span>
+    <span class="summary_desc"><div class='inline'>
+<p>Truncate the file.</p>
+</div></span>
   
 </li>
 
@@ -242,10 +260,11 @@
   
   
   
-  
 
   
-    <span class="summary_desc"><div class='inline'></div></span>
+    <span class="summary_desc"><div class='inline'>
+<p>Send a record to the workers queue.</p>
+</div></span>
   
 </li>
 
@@ -257,18 +276,16 @@
   <h2>Constructor Details</h2>
   
     <div class="method_details first">
-  <h3 class="signature first" id="initialize-instance_method">
+  <p class="signature first" id="initialize-instance_method">
   
     - (<tt><span class='object_link'><a href="" title="Daybreak::Writer (class)">Writer</a></span></tt>) <strong>initialize</strong>(file) 
   
 
   
-
-  
-</h3><div class="docstring">
+</p><div class="docstring">
   <div class="discussion">
     
-<p>A new instance of Writer</p>
+<p>Open up the file, ready it for binary and nonblocking writing.</p>
 
 
   </div>
@@ -282,18 +299,18 @@
       <pre class="lines">
 
 
-3
-4
-5
 6
 7
 8
 9
 10
-11</pre>
+11
+12
+13
+14</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/daybreak/writer.rb', line 3</span>
+      <pre class="code"><span class="info file"># File 'lib/daybreak/writer.rb', line 6</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_initialize'>initialize</span><span class='lparen'>(</span><span class='id identifier rubyid_file'>file</span><span class='rparen'>)</span>
   <span class='ivar'>@fd</span> <span class='op'>=</span> <span class='const'>File</span><span class='period'>.</span><span class='id identifier rubyid_open'>open</span> <span class='id identifier rubyid_file'>file</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>'</span><span class='tstring_content'>a</span><span class='tstring_end'>'</span></span>
@@ -314,30 +331,39 @@
 
   <div id="instance_method_details" class="method_details_list">
     <h2>Instance Method Details</h2>
-
+    
     
       <div class="method_details first">
-  <h3 class="signature first" id="close!-instance_method">
+  <p class="signature first" id="close!-instance_method">
   
     - (<tt>Object</tt>) <strong>close!</strong> 
   
 
   
+</p><div class="docstring">
+  <div class="discussion">
+    
+<p>Finish writing and close the file descriptor</p>
 
+
+  </div>
+</div>
+<div class="tags">
   
-</h3><table class="source_code">
+
+</div><table class="source_code">
   <tr>
     <td>
       <pre class="lines">
 
 
-25
-26
-27
-28</pre>
+32
+33
+34
+35</pre>
     </td>
     <td>
-      <pre class="code"><span class="info file"># File 'lib/daybreak/writer.rb', line 25</span>
+      <pre class="code"><span class="info file"># File 'lib/daybreak/writer.rb', line 32</span>
 
 <span class='kw'>def</span> <span class='id identifier rubyid_close!'>close!</span>
   <span class='id identifier rubyid_finish!'>finish!</span>
@@ -349,15 +375,141 @@
 </div>
     
       <div class="method_details ">
-  <h3 class="signature " id="finish!-instance_method">
+  <p class="signature " id="finish!-instance_method">
   
     - (<tt>Object</tt>) <strong>finish!</strong> 
   
 
   
+</p><div class="docstring">
+  <div class="discussion">
+    
+<p>Finish writing</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+22
+23
+24</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/daybreak/writer.rb', line 22</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_finish!'>finish!</span>
+  <span class='ivar'>@worker</span><span class='period'>.</span><span class='id identifier rubyid_finish!'>finish!</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="flush!-instance_method">
+  
+    - (<tt>Object</tt>) <strong>flush!</strong> 
+  
 
   
-</h3><table class="source_code">
+</p><div class="docstring">
+  <div class="discussion">
+    
+<p>Flush pending commits, and restart the worker.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+27
+28
+29</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/daybreak/writer.rb', line 27</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_flush!'>flush!</span>
+  <span class='ivar'>@worker</span><span class='period'>.</span><span class='id identifier rubyid_flush!'>flush!</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="truncate!-instance_method">
+  
+    - (<tt>Object</tt>) <strong>truncate!</strong> 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    
+<p>Truncate the file.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+38
+39
+40</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/daybreak/writer.rb', line 38</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_truncate!'>truncate!</span>
+  <span class='ivar'>@fd</span><span class='period'>.</span><span class='id identifier rubyid_truncate'>truncate</span><span class='lparen'>(</span><span class='int'>0</span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <p class="signature " id="write-instance_method">
+  
+    - (<tt>Object</tt>) <strong>write</strong>(record) 
+  
+
+  
+</p><div class="docstring">
+  <div class="discussion">
+    
+<p>Send a record to the workers queue.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
   <tr>
     <td>
       <pre class="lines">
@@ -370,96 +522,6 @@
     <td>
       <pre class="code"><span class="info file"># File 'lib/daybreak/writer.rb', line 17</span>
 
-<span class='kw'>def</span> <span class='id identifier rubyid_finish!'>finish!</span>
-  <span class='ivar'>@worker</span><span class='period'>.</span><span class='id identifier rubyid_finish!'>finish!</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <h3 class="signature " id="flush!-instance_method">
-  
-    - (<tt>Object</tt>) <strong>flush!</strong> 
-  
-
-  
-
-  
-</h3><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-21
-22
-23</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/daybreak/writer.rb', line 21</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_flush!'>flush!</span>
-  <span class='ivar'>@worker</span><span class='period'>.</span><span class='id identifier rubyid_flush!'>flush!</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <h3 class="signature " id="truncate!-instance_method">
-  
-    - (<tt>Object</tt>) <strong>truncate!</strong> 
-  
-
-  
-
-  
-</h3><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-30
-31
-32</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/daybreak/writer.rb', line 30</span>
-
-<span class='kw'>def</span> <span class='id identifier rubyid_truncate!'>truncate!</span>
-  <span class='ivar'>@fd</span><span class='period'>.</span><span class='id identifier rubyid_truncate'>truncate</span><span class='lparen'>(</span><span class='int'>0</span><span class='rparen'>)</span>
-<span class='kw'>end</span></pre>
-    </td>
-  </tr>
-</table>
-</div>
-    
-      <div class="method_details ">
-  <h3 class="signature " id="write-instance_method">
-  
-    - (<tt>Object</tt>) <strong>write</strong>(record) 
-  
-
-  
-
-  
-</h3><table class="source_code">
-  <tr>
-    <td>
-      <pre class="lines">
-
-
-13
-14
-15</pre>
-    </td>
-    <td>
-      <pre class="code"><span class="info file"># File 'lib/daybreak/writer.rb', line 13</span>
-
 <span class='kw'>def</span> <span class='id identifier rubyid_write'>write</span><span class='lparen'>(</span><span class='id identifier rubyid_record'>record</span><span class='rparen'>)</span>
   <span class='ivar'>@worker</span><span class='period'>.</span><span class='id identifier rubyid_enqueue'>enqueue</span> <span class='id identifier rubyid_record'>record</span>
 <span class='kw'>end</span></pre>
@@ -471,11 +533,11 @@
   </div>
 
 </div>
-
+    
     <div id="footer">
-  Generated on Thu Oct 25 22:19:45 2012 by
+  Generated on Sat Nov 10 16:56:10 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.3 (ruby-1.9.3).
+  0.7.5 (ruby-1.9.3).
 </div>
 
   </body>

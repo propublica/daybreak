@@ -1,4 +1,6 @@
+# Daybreak, a simple dimple key value store for ruby.
 module Daybreak
+  # The root path for Daybreak
   ROOT = File.expand_path(File.dirname(__FILE__))
 end
 

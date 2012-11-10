@@ -8,6 +8,9 @@ module Daybreak
     # Create a new Daybreak::DB. The second argument is the default value
     # to store when accessing a previously unset key, this follows the
     # Hash standard.
+    # @param [String] file the path to the db file
+    # @param default the default value to store and return when a key is
+    #  not yet in the database.
     def initialize(file, default=nil)
       @file_name = file
       reset!
@@ -16,7 +19,10 @@ module Daybreak
     end
 
     # Set a key in the database to be written at some future date. If the data
-    # needs to be persisted immediately, call db.set(key, value, true).
+    # needs to be persisted immediately, call <tt>db.set(key, value, true)</tt>.
+    # @param [#to_s] key the key of the storage slot in the database
+    # @param value the value to store
+    # @param [Boolean] sync if true, sync this value immediately
     def []=(key, value, sync = false)
       key = key.to_s
       @writer.write(Record.new(key, serialize(value)))
@@ -26,7 +32,9 @@ module Daybreak
     alias_method :set, :"[]="
 
     # Retrieve a value at key from the database. If the default value was specified
-    # when this database was created, that value will be set and returned.
+    # when this database was created, that value will be set and returned. Aliased
+    # as <tt>get</tt>.
+    # @param [#to_s] key the value to retrieve from the database.
     def [](key)
       key = key.to_s
       if @table.has_key? key
@@ -52,24 +60,30 @@ module Daybreak
       @table.has_key? key.to_s
     end
 
-    # Return the keys in the db;
+    # Return the keys in the db.
+    # @return [Array<String>]
     def keys
       @table.keys
     end
 
     # Return the number of stored items.
+    # @return [Integer]
     def length
       @table.keys.length
     end
 
     # Serialize the data for writing to disk, if you don't want to use <tt>Marshal</tt>
     # overwrite this method.
+    # @param value the value to be serialized
+    # @return [String]
     def serialize(value)
       Marshal.dump(value)
     end
 
     # Parse the serialized value from disk, like serialize if you want to use a
     # different serialization method overwrite this method.
+    # @param value the value to be parsed
+    # @return [String]
     def parse(value)
       Marshal.load(value)
     end
@@ -124,8 +138,8 @@ module Daybreak
       read!
     end
 
-    # Read all values from the log file, if you want to check for changed data
-    # call this again
+    # Read all values from the log file. If you want to check for changed data
+    # call this again.
     def read!
       @reader.read do |record|
         @table[record.key] = parse record.data

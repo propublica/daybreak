@@ -6,7 +6,7 @@
 <title>
   Module: Daybreak
   
-    &mdash; Documentation by YARD 0.8.3
+    &mdash; Documentation by YARD 0.7.5
   
 </title>
 
@@ -15,11 +15,9 @@
   <link rel="stylesheet" href="css/common.css" type="text/css" media="screen" charset="utf-8" />
 
 <script type="text/javascript" charset="utf-8">
-  hasFrames = window.top.frames.main ? true : false;
   relpath = '';
-  framesUrl = "frames.html#!" + escape(window.location.href);
+  if (relpath != '') relpath += '/';
 </script>
-
 
   <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
 
@@ -28,41 +26,36 @@
 
   </head>
   <body>
+    <script type="text/javascript" charset="utf-8">
+      if (window.top.frames.main) document.body.className = 'frames';
+    </script>
+    
     <div id="header">
       <div id="menu">
   
-    <a href="_index.html">Index (D)</a> &raquo;
+    <a href="_index.html">Index (D)</a> &raquo; 
     
     
     <span class="title">Daybreak</span>
   
-
+  
   <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
 </div>
 
       <div id="search">
   
-    <a class="full_list_link" id="class_list_link"
-        href="class_list.html">
-      Class List
-    </a>
+    <a id="class_list_link" href="#">Class List</a>
   
-    <a class="full_list_link" id="method_list_link"
-        href="method_list.html">
-      Method List
-    </a>
+    <a id="method_list_link" href="#">Method List</a>
   
-    <a class="full_list_link" id="file_list_link"
-        href="file_list.html">
-      File List
-    </a>
+    <a id="file_list_link" href="#">File List</a>
   
 </div>
       <div class="clear"></div>
     </div>
-
+    
     <iframe id="search_frame"></iframe>
-
+    
     <div id="content"><h1>Module: Daybreak
   
   
@@ -86,13 +79,24 @@
 </dl>
 <div class="clear"></div>
 
-<h2>Defined Under Namespace</h2>
-<p class="children">
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    
+<p>Daybreak, a simple dimple key value store for ruby.</p>
+
+
+  </div>
+</div>
+<div class="tags">
   
+
+</div><h2>Defined Under Namespace</h2>
+<p class="children">
+   
     
       <strong class="modules">Modules:</strong> <span class='object_link'><a href="Daybreak/Locking.html" title="Daybreak::Locking (module)">Locking</a></span>
     
-  
+   
     
       <strong class="classes">Classes:</strong> <span class='object_link'><a href="Daybreak/DB.html" title="Daybreak::DB (class)">DB</a></span>, <span class='object_link'><a href="Daybreak/Reader.html" title="Daybreak::Reader (class)">Reader</a></span>, <span class='object_link'><a href="Daybreak/Record.html" title="Daybreak::Record (class)">Record</a></span>, <span class='object_link'><a href="Daybreak/Writer.html" title="Daybreak::Writer (class)">Writer</a></span>
     
@@ -104,12 +108,34 @@
     <dl class="constants">
       
         <dt id="ROOT-constant" class="">ROOT =
-          
+          <div class="docstring">
+  <div class="discussion">
+    
+<p>The root path for Daybreak</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div>
         </dt>
         <dd><pre class="code"><span class='const'>File</span><span class='period'>.</span><span class='id identifier rubyid_expand_path'>expand_path</span><span class='lparen'>(</span><span class='const'>File</span><span class='period'>.</span><span class='id identifier rubyid_dirname'>dirname</span><span class='lparen'>(</span><span class='kw'>__FILE__</span><span class='rparen'>)</span><span class='rparen'>)</span></pre></dd>
       
         <dt id="VERSION-constant" class="">VERSION =
-          
+          <div class="docstring">
+  <div class="discussion">
+    
+<p>Updated using SemVer</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div>
         </dt>
         <dd><pre class="code"><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>0.0.1</span><span class='tstring_end'>&quot;</span></span></pre></dd>
       
@@ -125,11 +151,11 @@
 
 
 </div>
-
+    
     <div id="footer">
-  Generated on Thu Oct 25 22:19:45 2012 by
+  Generated on Sat Nov 10 16:56:10 2012 by 
   <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
-  0.8.3 (ruby-1.9.3).
+  0.7.5 (ruby-1.9.3).
 </div>
 
   </body>
