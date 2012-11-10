@@ -203,6 +203,9 @@ $ gem install daybreak
   <span class="c1"># set a key</span>
   <span class="n">db</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">=</span> <span class="mi">2</span>
 
+  <span class="c1"># set a key and flush the change to disk</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="kp">true</span><span class="p">)</span>
+
   <span class="c1"># ensure changes are sent to disk</span>
   <span class="n">db</span><span class="o">.</span><span class="n">flush!</span>
 
@@ -219,19 +222,27 @@ $ gem install daybreak
   <span class="mi">1000</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span><span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="n">db</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="n">i</span> <span class="p">}</span>
   <span class="nb">p</span> <span class="n">db</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span><span class="o">|</span><span class="n">m</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span> <span class="n">m</span> <span class="o">+</span> <span class="n">k</span><span class="o">.</span><span class="n">last</span> <span class="p">}</span> <span class="c1"># =&gt; 499500</span>
 
-  <span class="c1"># Compaction is always a good idea, to cut down on the size of the Database</span>
+  <span class="c1"># Compaction is always a good idea. It will cut down on the size of the Database</span>
   <span class="n">db</span><span class="o">.</span><span class="n">compact!</span>
   <span class="nb">p</span> <span class="n">db</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="c1">#=&gt; 1</span>
   <span class="n">db2</span><span class="o">.</span><span class="n">read!</span>
   <span class="nb">p</span> <span class="n">db2</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="c1">#=&gt; 1</span>
 
+  <span class="c1"># DBs can have default values to</span>
+  <span class="n">db3</span> <span class="o">=</span> <span class="no">Daybreak</span><span class="o">::</span><span class="no">DB</span><span class="o">.</span><span class="n">new</span> <span class="s2">&quot;example2.db&quot;</span><span class="p">,</span> <span class="s1">&#39;hello!&#39;</span>
+  <span class="n">db3</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="c1">#=&gt; hello!</span>
+
   <span class="c1"># close the databases</span>
   <span class="n">db</span><span class="o">.</span><span class="n">close!</span>
   <span class="n">db2</span><span class="o">.</span><span class="n">close!</span>
+  <span class="n">db3</span><span class="o">.</span><span class="n">close!</span>
 </pre></div>
 
     </code>
-
+    <p>
+      <tt>Daybreak::DB</tt> can be subclassed if you want a different serialization
+      strategy (for example, JSON). If so overwrite <tt>DB#parse</tt> and <tt>DB#serialize</tt>
+    </p>
     <h2>Architecture</h2>
 
     <p>

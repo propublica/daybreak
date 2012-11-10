@@ -213,6 +213,9 @@ $ gem install daybreak
   # set a key
   db[1] = 2
 
+  # set a key and flush the change to disk
+  db.set(2, 2, true)
+
   # ensure changes are sent to disk
   db.flush!
 
@@ -229,19 +232,27 @@ $ gem install daybreak
   1000.times {|i| db[i] = i }
   p db.reduce(0) {|m, k, v| m + k.last } # => 499500
 
-  # Compaction is always a good idea, to cut down on the size of the Database
+  # Compaction is always a good idea. It will cut down on the size of the Database
   db.compact!
   p db[1] #=> 1
   db2.read!
   p db2[1] #=> 1
 
+  # DBs can have default values to
+  db3 = Daybreak::DB.new "example2.db", 'hello!'
+  db3[0] #=> hello!
+
   # close the databases
   db.close!
   db2.close!
+  db3.close!
 RUBY
 %>
     </code>
-
+    <p>
+      <tt>Daybreak::DB</tt> can be subclassed if you want a different serialization
+      strategy (for example, JSON). If so overwrite <tt>DB#parse</tt> and <tt>DB#serialize</tt>
+    </p>
     <h2>Architecture</h2>
 
     <p>
