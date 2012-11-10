@@ -95,7 +95,11 @@
         text-align: center;
       }
       table th {
-        width: 50%;
+        width: 40%;
+      }
+
+      table th.crc {
+        width: 20%;
       }
 
       /* styles stolen from docco */
@@ -274,6 +278,7 @@ $ gem install daybreak
     <p>
       Daybreak stores its data in the simplest file format imaginable. Each
       Daybreak file is an append only log consisting of alternating key and value cells.
+      Every key-value pair also has an associated 32 bit CRC field to protect against bad data.
       Each cell starts with a 32 bit unsigend big-endian integer representing the
       length of the value stored in the cell. Here is how a database of one record might
       look like:
@@ -283,18 +288,21 @@ $ gem install daybreak
         <tr>
           <th class="key" colspan="2">Key</th>
           <th class="key" colspan="2">Value</th>
+          <th class="key">CRC</th>
         </tr>
         <tr>
           <td>Encoded Length</td>
           <td>String Key</td>
           <td>Encoded Length</td>
           <td>Marshalled Value</td>
+          <td rowspan="2"><small>CRC32(key, value)</small></td>
         </tr>
         <tr>
           <td>(...)0000101</td>
           <td>hello</td>
           <td>(...)0001010</td>
           <td>&lt;marshalled value&gt;</td>
+
         </tr>
       </table>
 

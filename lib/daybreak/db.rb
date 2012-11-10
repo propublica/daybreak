@@ -92,31 +92,40 @@ module Daybreak
       @reader = Daybreak::Reader.new(@file_name)
     end
 
+    # Close the database for reading and writing.
     def close!
       @writer.close!
       @reader.close!
     end
 
+    # Compact the database to remove stale commits and reduce the file size.
     def compact!
+      # Create a new temporary file
       tmp_file = Tempfile.new File.basename(@file_name)
       copy_db  = DB.new tmp_file.path
 
+      # Copy the database key by key into the temporary table
       each do |key, i|
         copy_db.set(key, get(key))
       end
       copy_db.close!
 
+      # Empty this database
       empty!
 
+      # Move the copy into place
       tmp_file.close
       FileUtils.mv tmp_file.path, @file_name
       tmp_file.unlink
 
+      # Reset this database
       close!
       reset!
       read!
     end
 
+    # Read all values from the log file, if you want to check for changed data
+    # call this again
     def read!
       @reader.read do |record|
         @table[record.key] = parse record.data

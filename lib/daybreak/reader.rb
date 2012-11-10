@@ -1,5 +1,6 @@
 module Daybreak
-  # Class for building out the table
+  # Class for building out the table, you shouldn't need to access this
+  # class directly.
   class Reader
     def initialize(file)
       @file_name = file
