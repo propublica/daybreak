@@ -193,7 +193,7 @@ $ gem install daybreak
     <h2>Overview</h2>
 
     <p>
-      Daybreak stores data in an append only file, and vales inserted into the
+      Daybreak stores data in an append only file, and values inserted into the
       database are marshalled ruby objects. It includes <tt>Enumerable</tt>
       for functional methods like <tt>map</tt> and <tt>reduce</tt> and emulates
       the interface of a simple ruby hash. Here is the basic api:
@@ -313,6 +313,15 @@ $ gem install daybreak
       call <tt>flush!</tt> if you want commits to block and be written to
       the filesystem.
     </p>
+
+    <h2>In the Wild</h2>
+    <ul>
+      <li>
+        The <a href="http://projects.propublica.org">Message Machine</a> uses
+        Daybreak to store word frequencies and indexes for search and document
+        clustering.
+      </li>
+    </ul>
 
     <h2>Change Log</h2>
 
