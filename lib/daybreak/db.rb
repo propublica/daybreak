@@ -77,10 +77,12 @@ module Daybreak
     def reset!
       @table  = {}
       @writer = Daybreak::Writer.new(@file_name)
+      @reader = Daybreak::Reader.new(@file_name)
     end
 
     def close!
       @writer.close!
+      @reader.close!
     end
 
     def compact!
@@ -104,7 +106,7 @@ module Daybreak
     end
 
     def read_all!
-      Reader.new(@file_name).read do |record|
+      @reader.read do |record|
         @table[record.key] = parse record.data
       end
     end

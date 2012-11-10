@@ -33,6 +33,7 @@ describe "database functions" do
     db2 = Daybreak::DB.new DB_PATH
     assert_equal db2['1'], '4'
     assert_equal db2['4'], '1'
+    db2.close!
   end
 
   it "should compact cleanly" do
@@ -50,6 +51,15 @@ describe "database functions" do
     assert_equal default_db[1], 0
     default_db[1] = 1
     assert_equal default_db[1], 1
+  end
+
+  it "should be able to sync competing writes" do
+    @db.set('1', 4, true)
+    db2 = Daybreak::DB.new DB_PATH
+    db2.set('1', 5, true)
+    @db.read_all!
+    assert_equal @db['1'], 5
+    @db.close!
   end
 
   after do
