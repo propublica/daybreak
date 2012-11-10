@@ -12,7 +12,7 @@ module Daybreak
       @file_name = file
       reset!
       @default   = default
-      read_all!
+      read!
     end
 
     # Set a key in the database to be written at some future date. If the data
@@ -102,10 +102,10 @@ module Daybreak
 
       close!
       reset!
-      read_all!
+      read!
     end
 
-    def read_all!
+    def read!
       @reader.read do |record|
         @table[record.key] = parse record.data
       end

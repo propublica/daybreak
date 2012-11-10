@@ -1,6 +1,7 @@
 <%
-  def highlight(lang, code)
-    IO.popen("pygmentize -f html -l #{lang}", 'w+') do |p|
+  require './lib/daybreak'
+  def highlight(code)
+    IO.popen("pygmentize -f html -l ruby", 'w+') do |p|
       p.puts code
       p.close_write
       p.read
@@ -178,15 +179,21 @@
                                           -= /   \ =-
                     ~^~ ^ ^~^~ ~^~ ~ ~^~~^~^-=~=~=-~^~^~^~
 </pre>
-    </p>
-
     <p>
+      Daybreak is a simple key value store for ruby. It has user defined persistence,
+      and all data is stored in a table in memory so ruby niceties are available.
+      Daybreak's performance is on par with other options like <tt>pstore</tt> and
+      <tt>dbm</tt>.
+    </p>
+    <p>
+      The souce is on <a href="http://github.com/propublica/daybreak">Github</a> and you can install it with:
+    </p>
 
 <pre>
 $ gem install daybreak
 </pre>
-    </p>
 
+    <p>(v<%= Daybreak::VERSION %>) | <a href="doc/frames.html">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
 
     <h2>Overview</h2>
 
@@ -197,8 +204,43 @@ $ gem install daybreak
       the interface of a simple ruby hash. Here is the basic api:
     </p>
 
+    <code>
+<%= highlight <<-RUBY
+  require 'daybreak'
 
+  db = Daybreak::DB.new "example.db"
 
+  # set a key
+  db[1] = 2
+
+  # ensure changes are sent to disk
+  db.flush!
+
+  # open up another db client
+  db2 = Daybreak::DB.new "example.db"
+  db2[1] = 3
+  db2.flush!
+
+  # Reread the changed file in the first db
+  db.read!
+  p db[1] #=> 3
+
+  # Enumerable works to!
+  1000.times {|i| db[i] = i }
+  p db.reduce(0) {|m, k, v| m + k.last } # => 499500
+
+  # Compaction is always a good idea, to cut down on the size of the Database
+  db.compact!
+  p db[1] #=> 1
+  db2.read!
+  p db2[1] #=> 1
+
+  # close the databases
+  db.close!
+  db2.close!
+RUBY
+%>
+    </code>
 
     <h2>Architecture</h2>
 
@@ -254,8 +296,9 @@ $ gem install daybreak
     <p>
       These values are all read into an in memory hash table and commits to the
       database are queued for writing when the OS signals the file is ready.
-      A reminder: pass <tt>true</tt> as the last argument to <tt>set</tt> if you want
-      commits to block and be written to the filesystem.
+      A reminder: pass <tt>true</tt> as the last argument to <tt>set</tt>, or
+      call <tt>flush!</tt> if you want commits to block and be written to
+      the filesystem.
     </p>
 
     <h2>Change Log</h2>
