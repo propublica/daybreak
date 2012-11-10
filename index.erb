@@ -228,7 +228,7 @@ $ gem install daybreak
   db.read!
   p db[1] #=> 3
 
-  # Enumerable works to!
+  # Enumerable works too!
   1000.times {|i| db[i] = i }
   p db.reduce(0) {|m, k, v| m + k.last } # => 499500
 
@@ -238,7 +238,7 @@ $ gem install daybreak
   db2.read!
   p db2[1] #=> 1
 
-  # DBs can have default values to
+  # DBs can have default values
   db3 = Daybreak::DB.new "example2.db", 'hello!'
   db3[0] #=> hello!
 
@@ -271,8 +271,8 @@ RUBY
     <p>
       Writes with duplicate keys are simply appended to the end of the file.
       From time to time you will want to run <tt>compact!</tt> which will remove
-      old commits from the file and create a serialized copy of the in memory hash
-      table. This shrinks the space necessary to store the data.
+      old commits from the file and create a smaller logfile. This will shrink the
+      space necessary to store the data on disk.
     </p>
 
     <h2>File Format</h2>
