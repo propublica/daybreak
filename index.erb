@@ -222,11 +222,15 @@ $ gem install daybreak
   # open up another db client
   db2 = Daybreak::DB.new "example.db"
   db2[1] = 3
+
+  # Ruby objects work too
+  db2[5] = {:one => 1}
   db2.flush!
 
   # Reread the changed file in the first db
   db.read!
   p db[1] #=> 3
+  p db[5] #=> {:one => 1}
 
   # Enumerable works too!
   1000.times {|i| db[i] = i }

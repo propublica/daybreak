@@ -212,13 +212,17 @@ $ gem install daybreak
   <span class="c1"># open up another db client</span>
   <span class="n">db2</span> <span class="o">=</span> <span class="no">Daybreak</span><span class="o">::</span><span class="no">DB</span><span class="o">.</span><span class="n">new</span> <span class="s2">&quot;example.db&quot;</span>
   <span class="n">db2</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">=</span> <span class="mi">3</span>
+
+  <span class="c1"># Ruby objects work too</span>
+  <span class="n">db2</span><span class="o">[</span><span class="mi">5</span><span class="o">]</span> <span class="o">=</span> <span class="p">{</span><span class="ss">:one</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">}</span>
   <span class="n">db2</span><span class="o">.</span><span class="n">flush!</span>
 
   <span class="c1"># Reread the changed file in the first db</span>
   <span class="n">db</span><span class="o">.</span><span class="n">read!</span>
   <span class="nb">p</span> <span class="n">db</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="c1">#=&gt; 3</span>
+  <span class="nb">p</span> <span class="n">db</span><span class="o">[</span><span class="mi">5</span><span class="o">]</span> <span class="c1">#=&gt; {:one =&gt; 1}</span>
 
-  <span class="c1"># Enumerable works to!</span>
+  <span class="c1"># Enumerable works too!</span>
   <span class="mi">1000</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span><span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="n">db</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="n">i</span> <span class="p">}</span>
   <span class="nb">p</span> <span class="n">db</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span><span class="o">|</span><span class="n">m</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span> <span class="n">m</span> <span class="o">+</span> <span class="n">k</span><span class="o">.</span><span class="n">last</span> <span class="p">}</span> <span class="c1"># =&gt; 499500</span>
 
@@ -228,7 +232,7 @@ $ gem install daybreak
   <span class="n">db2</span><span class="o">.</span><span class="n">read!</span>
   <span class="nb">p</span> <span class="n">db2</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="c1">#=&gt; 1</span>
 
-  <span class="c1"># DBs can have default values to</span>
+  <span class="c1"># DBs can have default values</span>
   <span class="n">db3</span> <span class="o">=</span> <span class="no">Daybreak</span><span class="o">::</span><span class="no">DB</span><span class="o">.</span><span class="n">new</span> <span class="s2">&quot;example2.db&quot;</span><span class="p">,</span> <span class="s1">&#39;hello!&#39;</span>
   <span class="n">db3</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="c1">#=&gt; hello!</span>
 
@@ -261,8 +265,8 @@ $ gem install daybreak
     <p>
       Writes with duplicate keys are simply appended to the end of the file.
       From time to time you will want to run <tt>compact!</tt> which will remove
-      old commits from the file and create a serialized copy of the in memory hash
-      table. This shrinks the space necessary to store the data.
+      old commits from the file and create a smaller logfile. This will shrink the
+      space necessary to store the data on disk.
     </p>
 
     <h2>File Format</h2>

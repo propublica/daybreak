@@ -37,43 +37,55 @@ module Daybreak
     end
     alias_method :get, :"[]"
 
+    # Iterate over the key, value pairs in the database.
     def each(&blk)
       keys.each { |k| blk.call(k, get(k)) }
     end
 
+    # Does this db have a default value.
     def default?
       !@default.nil?
     end
 
+    # Does this db have a value for this key?
     def has_key?(key)
       @table.has_key? key.to_s
     end
 
+    # Return the keys in the db;
     def keys
       @table.keys
     end
 
+    # Return the number of stored items.
     def length
       @table.keys.length
     end
 
+    # Serialize the data for writing to disk, if you don't want to use <tt>Marshal</tt>
+    # overwrite this method.
     def serialize(value)
       Marshal.dump(value)
     end
 
+    # Parse the serialized value from disk, like serialize if you want to use a
+    # different serialization method overwrite this method.
     def parse(value)
       Marshal.load(value)
     end
 
+    # Reset and empty the database file.
     def empty!
       reset!
       @writer.truncate!
     end
 
+    # Force all queued commits to be written to disk.
     def flush!
       @writer.flush!
     end
 
+    # Reset the state of the database, you should call <tt>read!</tt> after calling this.
     def reset!
       @table  = {}
       @writer = Daybreak::Writer.new(@file_name)
