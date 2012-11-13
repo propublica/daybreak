@@ -218,15 +218,12 @@ $ gem install daybreak
   db['foo'] = 2
 
   # set the value of a key and flush the change to disk
-  db.set('bar', 2, true)
+  db.set! 'bar', 2
 
   # all keys are cast to strings via #to_s
   db[1] = 2
   db.keys.include? 1 # => false
   db.keys.include? '1' # => true
-
-  # set the value of a key and flush the change to disk
-  db.set(2, 2, true)
 
   # ensure changes are sent to disk
   db.flush!
@@ -320,7 +317,6 @@ RUBY
           <td>hello</td>
           <td>(...)0001010</td>
           <td>&lt;marshalled value&gt;</td>
-
         </tr>
       </table>
 
