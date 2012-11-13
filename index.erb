@@ -214,11 +214,19 @@ $ gem install daybreak
 
   db = Daybreak::DB.new "example.db"
 
-  # set a key
+  # set the value of a key
   db['foo'] = 2
 
-  # set a key and flush the change to disk
+  # set the value of a key and flush the change to disk
   db.set('bar', 2, true)
+
+  # all keys are cast to strings via #to_s
+  db[1] = 2
+  db.keys.include? 1 # => false
+  db.keys.include? '1' # => true
+
+  # set the value of a key and flush the change to disk
+  db.set(2, 2, true)
 
   # ensure changes are sent to disk
   db.flush!
