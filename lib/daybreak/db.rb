@@ -31,6 +31,13 @@ module Daybreak
     end
     alias_method :set, :"[]="
 
+    # set! flushes data immediately to disk.
+    # @param [#to_s] key the key of the storage slot in the database
+    # @param value the value to store
+    def set!(key, value)
+      set key, value, true
+    end
+
     # Retrieve a value at key from the database. If the default value was specified
     # when this database was created, that value will be set and returned. Aliased
     # as <tt>get</tt>.
