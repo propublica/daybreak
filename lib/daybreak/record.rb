@@ -2,9 +2,9 @@ module Daybreak
   # Records define how data is serialized and read from disk.
   class Record
     # Thrown when either key or data is missing
-
     class UnnacceptableDataError < Exception; end
-    # Thrown when there is a CRC mismatch between the data read,
+
+    # Thrown when there is a CRC mismatch between the data from the disk
     # and what was written to disk previously.
     class CorruptDataError < Exception; end
     include Locking
