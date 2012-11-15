@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'simplecov'
+require 'set'
 SimpleCov.start
 SimpleCov.command_name "Unit tests"
 
@@ -62,13 +63,18 @@ describe "database functions" do
     @db.close!
   end
 
-  it " should be able to handle another process's call to compact" do
+  it "should be able to handle another process's call to compact" do
     20.times {|i| @db.set i, i, true }
     db2 = Daybreak::DB.new DB_PATH
     20.times {|i| @db.set i, i + 1, true }
     @db.compact!
     db2.read!
     assert_equal 20, db2['19']
+  end
+
+  it "should handle default values that are procs" do
+    db = Daybreak::DB.new(DB_PATH) {|key| Set.new }
+    assert db['foo'].is_a? Set
   end
 
   after do

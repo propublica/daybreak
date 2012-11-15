@@ -11,10 +11,12 @@ module Daybreak
     # @param [String] file the path to the db file
     # @param default the default value to store and return when a key is
     #  not yet in the database.
-    def initialize(file, default=nil)
+    # @yield [key] blk a block that will return the default value to store.
+    def initialize(file, default=nil, &blk)
       @file_name = file
       reset!
-      @default   = default
+      @default = default
+      @default = blk if block_given?
       read!
     end
 
@@ -47,7 +49,12 @@ module Daybreak
       if @table.has_key? key
         @table[key]
       elsif default?
-        set key, @default
+        if @default.is_a? Proc
+          value = @default.call(key)
+        else
+          value = @default
+        end
+        set key, value
       end
     end
     alias_method :get, :"[]"

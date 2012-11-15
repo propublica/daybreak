@@ -97,6 +97,7 @@ module Daybreak
       def flush!
         finish!
         @thread = Thread.new { work }
+        true
       end
 
       # Push a nil through the queue and block until the write loop is finished.
