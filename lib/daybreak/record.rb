@@ -2,9 +2,9 @@ module Daybreak
   # Records define how data is serialized and read from disk.
   class Record
     # Thrown when either key or data is missing
-
     class UnnacceptableDataError < Exception; end
-    # Thrown when there is a CRC mismatch between the data read,
+
+    # Thrown when there is a CRC mismatch between the data from the disk
     # and what was written to disk previously.
     class CorruptDataError < Exception; end
     include Locking
@@ -48,7 +48,7 @@ module Daybreak
     end
 
     def crc_string
-      Array(Zlib.crc32(byte_string, 0)).pack('N')
+      [Zlib.crc32(byte_string, 0)].pack('N')
     end
 
     def read_bytes(io)
@@ -58,7 +58,7 @@ module Daybreak
     end
 
     def part(data)
-      Array(data.bytesize).pack('N') + data
+      [data.bytesize].pack('N') + data
     end
   end
 end
