@@ -10,6 +10,11 @@ task :bench do
   require "./test/bench.rb"
 end
 
+desc "Profile a simple run"
+task :prof do
+  require "./test/prof.rb"
+end
+
 require 'erb'
 
 desc "Write out docs to index.html"
