@@ -48,7 +48,7 @@ module Daybreak
     end
 
     def crc_string
-      Array(Zlib.crc32(byte_string, 0)).pack('N')
+      [Zlib.crc32(byte_string, 0)].pack('N')
     end
 
     def read_bytes(io)
@@ -58,7 +58,7 @@ module Daybreak
     end
 
     def part(data)
-      Array(data.bytesize).pack('N') + data
+      [data.bytesize].pack('N') + data
     end
   end
 end
