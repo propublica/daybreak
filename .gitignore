@@ -1,5 +1,6 @@
 *.db
 coverage
+doc
 .DS_Store
 .yardoc
 Gemfile.lock

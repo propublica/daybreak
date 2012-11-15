@@ -188,7 +188,7 @@
 $ gem install daybreak
 </pre>
 
-    <p>(v0.0.1) | <a href="doc/frames.html">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
+    <p>(v0.0.1) | <a href="http://rdoc.info/docs/daybreak">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
 
     <h2>Overview</h2>
 
@@ -208,16 +208,12 @@ $ gem install daybreak
   <span class="n">db</span><span class="o">[</span><span class="s1">&#39;foo&#39;</span><span class="o">]</span> <span class="o">=</span> <span class="mi">2</span>
 
   <span class="c1"># set the value of a key and flush the change to disk</span>
-  <span class="n">db</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="kp">true</span><span class="p">)</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">set!</span> <span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="mi">2</span>
 
   <span class="c1"># all keys are cast to strings via #to_s</span>
   <span class="n">db</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">=</span> <span class="mi">2</span>
   <span class="n">db</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">include?</span> <span class="mi">1</span> <span class="c1"># =&gt; false</span>
   <span class="n">db</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">include?</span> <span class="s1">&#39;1&#39;</span> <span class="c1"># =&gt; true</span>
-
-
-  <span class="c1"># set the value of a key and flush the change to disk</span>
-  <span class="n">db</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="kp">true</span><span class="p">)</span>
 
   <span class="c1"># ensure changes are sent to disk</span>
   <span class="n">db</span><span class="o">.</span><span class="n">flush!</span>
@@ -311,7 +307,6 @@ $ gem install daybreak
           <td>hello</td>
           <td>(...)0001010</td>
           <td>&lt;marshalled value&gt;</td>
-
         </tr>
       </table>
 
