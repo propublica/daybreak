@@ -2,12 +2,12 @@
 require "bundler/gem_tasks"
 
 task :default do
-  require "./test/daybreak_test.rb"
+  require "./test/test.rb"
 end
 
 desc "Run benchmarks"
 task :bench do
-  require "./test/daybreak_bench.rb"
+  require "./test/bench.rb"
 end
 
 require 'erb'
