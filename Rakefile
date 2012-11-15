@@ -5,6 +5,11 @@ task :default do
   require "./test/daybreak_test.rb"
 end
 
+desc "Run benchmarks"
+task :bench do
+  require "./test/daybreak_bench.rb"
+end
+
 require 'erb'
 
 desc "Write out docs to index.html"
