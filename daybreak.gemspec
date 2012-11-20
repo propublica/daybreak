@@ -12,6 +12,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test)/})
   gem.name          = "daybreak"
   gem.require_paths = ["lib"]
+  gem.licenses      = ["MIT"]
   gem.version       = Daybreak::VERSION
   gem.add_development_dependency 'simplecov'
   gem.add_development_dependency 'ruby-prof'

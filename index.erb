@@ -185,8 +185,8 @@
 </pre>
     <p>
       Daybreak is a simple key value store for ruby. It has user defined persistence,
-      and all data is stored in a table in memory so, ruby niceties are available.
-      Daybreak's performance is faster than <tt>pstore</tt> and more convenient than
+      and all data is stored in a table in memory, so ruby niceties are available.
+      Daybreak's is faster than <tt>pstore</tt> and more convenient than
       <tt>dbm</tt>.
     </p>
     <p>
@@ -294,7 +294,7 @@ RUBY
       Daybreak stores its data in the simplest file format imaginable. Each
       Daybreak file is an append only log consisting of alternating key and value cells.
       Every key-value pair also has an associated 32 bit CRC field to protect against bad data.
-      Each cell starts with a 32 bit unsigend big-endian integer representing the
+      Each cell starts with a 32 bit unsigned big-endian integer representing the
       length of the value stored in the cell. Here is how a database of one record might
       look like:
     </p>
@@ -331,7 +331,7 @@ RUBY
     <h2>In the Wild</h2>
     <ul>
       <li>
-        The <a href="http://projects.propublica.org">Message Machine</a> uses
+        The <a href="http://projects.propublica.org/emails/">Message Machine</a> uses
         Daybreak to store word frequencies and indexes for search and document
         clustering.
       </li>
