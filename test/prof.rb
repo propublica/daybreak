@@ -4,7 +4,7 @@ require 'ruby-prof'
 
 result = RubyProf.profile do
   db = Daybreak::DB.new './t.db'
-  1000.times {|n| db[n] = n}
+  100000.times {|n| db[n] = n}
   db.flush!
 end
 
