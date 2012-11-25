@@ -16,7 +16,8 @@ module Daybreak
       @data = data
     end
 
-    # Read a record from an open io source, check the CRC, and set @key and @data
+    # Read a record from an open io source, check the CRC, and set <tt>@key</tt>
+    # and <tt>@data</tt>.
     # @param [#read] io an IO instance to read from
     def read(io)
       lock io do
@@ -28,7 +29,7 @@ module Daybreak
       self
     end
 
-    # The serialized representation of the key value pair plus the CRC
+    # The serialized representation of the key value pair plus the CRC.
     # @return [String]
     def representation
       raise UnnacceptableDataError, "key and data must be defined" if @key.nil? || @data.nil?

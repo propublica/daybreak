@@ -11,7 +11,8 @@ module Daybreak
     # @param [String] file the path to the db file
     # @param default the default value to store and return when a key is
     #  not yet in the database.
-    # @yield [key] blk a block that will return the default value to store.
+    # @yield [key] a block that will return the default value to store.
+    # @yieldparam [String] key the key to be stored.
     def initialize(file, default=nil, &blk)
       @file_name = file
       reset!
@@ -60,6 +61,9 @@ module Daybreak
     alias_method :get, :"[]"
 
     # Iterate over the key, value pairs in the database.
+    # @yield [key, value] blk the iterator for each key value pair.
+    # @yieldparam [String] key the key.
+    # @yieldparam value the value from the database.
     def each(&blk)
       keys.each { |k| blk.call(k, get(k)) }
     end
@@ -70,6 +74,7 @@ module Daybreak
     end
 
     # Does this db have a value for this key?
+    # @param [key#to_s] key the key to check if the DB has a key.
     def has_key?(key)
       @table.has_key? key.to_s
     end

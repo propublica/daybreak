@@ -28,7 +28,7 @@ module Daybreak
       @worker.flush!
     end
 
-    # Finish writing and close the file descriptor
+    # Finish writing and close the file descriptor.
     def close!
       finish!
       @fd.close

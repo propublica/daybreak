@@ -8,11 +8,13 @@ module Daybreak
       @file_name = file
     end
 
-    # Close's the Reader's file descriptor
+    # Close the Reader's file descriptor.
     def close!
       @fd.close unless @fd.nil?
     end
 
+    # Read all values from the aof file.
+    #
     # Right now this is really expensive, every call to read will
     # close and reread the whole db file, but since cross process
     # consistency is handled by the user, this should be fair warning.
