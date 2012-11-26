@@ -109,8 +109,8 @@ module Daybreak
 
     # Reset and empty the database file.
     def empty!
-      reset!
       @writer.truncate!
+      reset!
     end
 
     # Force all queued commits to be written to disk.

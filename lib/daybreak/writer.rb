@@ -4,11 +4,9 @@ module Daybreak
   class Writer
     # Open up the file, ready it for binary and nonblocking writing.
     def initialize(file)
-      @fd = File.open file, 'a'
-      @fd.binmode
+      @file = file
 
-      f = @fd.fcntl(Fcntl::F_GETFL, 0)
-      @fd.fcntl(Fcntl::F_SETFL, Fcntl::O_NONBLOCK | f)
+      open!
 
       @worker = Worker.new(@fd)
     end
@@ -36,11 +34,20 @@ module Daybreak
 
     # Truncate the file.
     def truncate!
-      @worker.flush!
+      flush!
       @fd.truncate(0)
+      open!
     end
 
     private
+
+    def open!
+      @fd = File.open @file, 'a'
+      @fd.binmode
+
+      f = @fd.fcntl(Fcntl::F_GETFL, 0)
+      @fd.fcntl(Fcntl::F_SETFL, Fcntl::O_NONBLOCK | f)
+    end
 
     # Workers handle the actual fiddly bits of asynchronous io and
     # and handle background writes.

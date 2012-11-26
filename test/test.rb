@@ -59,16 +59,22 @@ describe "database functions" do
     db2.set! '1', 5
     @db.read!
     assert_equal @db['1'], 5
-    @db.close!
   end
 
-  it " should be able to handle another process's call to compact" do
+  it "should be able to handle another process's call to compact" do
     20.times {|i| @db.set i, i, true }
     db2 = Daybreak::DB.new DB_PATH
     20.times {|i| @db.set i, i + 1, true }
     @db.compact!
     db2.read!
     assert_equal 20, db2['19']
+  end
+
+  it "can empty the database" do
+    20.times {|i| @db[i] = i }
+    @db.empty!
+    db2 = Daybreak::DB.new DB_PATH
+    assert_equal nil, db2['19']
   end
 
   after do
