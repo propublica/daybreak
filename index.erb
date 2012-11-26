@@ -255,7 +255,28 @@ $ gem install daybreak
   db3 = Daybreak::DB.new "example2.db", 'hello!'
   db3['bingo'] #=> hello!
 
+  # Not a fan of Marshal? Inherit from Daybreak::DB and rewrite serialize and parse
+  require 'json'
+  class JSONDB < Daybreak::DB
+    def serialize(it)
+      it.to_json
+    end
+
+    def parse(it)
+      JSON.parse(it)
+    end
+  end
+
+  jsondb = JSONDB.new 'json.db'
+  jsondb[1] = {'one' => 1}
+  jsondb.close!
+  jsondb = JSONDB.new 'json.db'
+  jsondb[1]
+  #=> {'one' => 1}
+
+
   # close the databases
+  jsondb.close!
   db.close!
   db2.close!
   db3.close!

@@ -188,7 +188,7 @@
 $ gem install daybreak
 </pre>
 
-    <p>(v0.0.1) | <a href="http://rdoc.info/docs/daybreak">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
+    <p>(v0.0.1) | <a href="http://rdoc.info/github/propublica/daybreak/master/frames">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
 
     <h2>Overview</h2>
 
@@ -245,7 +245,28 @@ $ gem install daybreak
   <span class="n">db3</span> <span class="o">=</span> <span class="no">Daybreak</span><span class="o">::</span><span class="no">DB</span><span class="o">.</span><span class="n">new</span> <span class="s2">&quot;example2.db&quot;</span><span class="p">,</span> <span class="s1">&#39;hello!&#39;</span>
   <span class="n">db3</span><span class="o">[</span><span class="s1">&#39;bingo&#39;</span><span class="o">]</span> <span class="c1">#=&gt; hello!</span>
 
+  <span class="c1"># Not a fan of Marshal? Inherit from Daybreak::DB and rewrite serialize and parse</span>
+  <span class="nb">require</span> <span class="s1">&#39;json&#39;</span>
+  <span class="k">class</span> <span class="nc">JSONDB</span> <span class="o">&lt;</span> <span class="no">Daybreak</span><span class="o">::</span><span class="no">DB</span>
+    <span class="k">def</span> <span class="nf">serialize</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
+      <span class="n">it</span><span class="o">.</span><span class="n">to_json</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
+      <span class="no">JSON</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="n">jsondb</span> <span class="o">=</span> <span class="no">JSONDB</span><span class="o">.</span><span class="n">new</span> <span class="s1">&#39;json.db&#39;</span>
+  <span class="n">jsondb</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;one&#39;</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">}</span>
+  <span class="n">jsondb</span><span class="o">.</span><span class="n">close!</span>
+  <span class="n">jsondb</span> <span class="o">=</span> <span class="no">JSONDB</span><span class="o">.</span><span class="n">new</span> <span class="s1">&#39;json.db&#39;</span>
+  <span class="n">jsondb</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
+  <span class="c1">#=&gt; {&#39;one&#39; =&gt; 1}</span>
+
+
   <span class="c1"># close the databases</span>
+  <span class="n">jsondb</span><span class="o">.</span><span class="n">close!</span>
   <span class="n">db</span><span class="o">.</span><span class="n">close!</span>
   <span class="n">db2</span><span class="o">.</span><span class="n">close!</span>
   <span class="n">db3</span><span class="o">.</span><span class="n">close!</span>
@@ -284,7 +305,7 @@ $ gem install daybreak
       Daybreak stores its data in the simplest file format imaginable. Each
       Daybreak file is an append only log consisting of alternating key and value cells.
       Every key-value pair also has an associated 32 bit CRC field to protect against bad data.
-      Each cell starts with a 32 bit unsigend big-endian integer representing the
+      Each cell starts with a 32 bit unsigned big-endian integer representing the
       length of the value stored in the cell. Here is how a database of one record might
       look like:
     </p>
@@ -321,7 +342,7 @@ $ gem install daybreak
     <h2>In the Wild</h2>
     <ul>
       <li>
-        The <a href="http://projects.propublica.org">Message Machine</a> uses
+        The <a href="http://projects.propublica.org/emails/">Message Machine</a> uses
         Daybreak to store word frequencies and indexes for search and document
         clustering.
       </li>
