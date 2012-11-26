@@ -36,6 +36,7 @@ module Daybreak
 
     # Truncate the file.
     def truncate!
+      @worker.flush!
       @fd.truncate(0)
     end
 
