@@ -14,6 +14,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.licenses      = ["MIT"]
   gem.version       = Daybreak::VERSION
+  gem.add_development_dependency 'minitest'
   gem.add_development_dependency 'simplecov'
   gem.add_development_dependency 'ruby-prof'
 end

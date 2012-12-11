@@ -145,6 +145,7 @@ module Daybreak
 
       # Empty this database
       empty!
+      close!
 
       # Move the copy into place
       tmp_file.close
@@ -152,7 +153,6 @@ module Daybreak
       tmp_file.unlink
 
       # Reset this database
-      close!
       reset!
       read!
     end
