@@ -45,8 +45,10 @@ module Daybreak
       @fd = File.open @file, 'a'
       @fd.binmode
 
-      f = @fd.fcntl(Fcntl::F_GETFL, 0)
-      @fd.fcntl(Fcntl::F_SETFL, Fcntl::O_NONBLOCK | f)
+      if defined?(Fcntl::O_NONBLOCK)
+        f = @fd.fcntl(Fcntl::F_GETFL, 0)
+        @fd.fcntl(Fcntl::F_SETFL, Fcntl::O_NONBLOCK | f)
+      end
     end
 
     # Workers handle the actual fiddly bits of asynchronous io and
@@ -89,7 +91,11 @@ module Daybreak
       # If the write fails try again.
       def try_write(fd, buf)
         begin
-          s = fd.write_nonblock(buf)
+          if defined?(Fcntl::O_NONBLOCK)
+            s = fd.write_nonblock(buf)
+          else
+            s = fd.write(buf)
+          end
           if s < buf.length
             buf = buf[s..-1] # didn't finish
           else

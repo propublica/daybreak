@@ -80,8 +80,5 @@ describe "database functions" do
   after do
     @db.empty!
     @db.close!
-    File.unlink(DB_PATH)
   end
 end
-
-
