@@ -59,7 +59,6 @@ module Daybreak
       def initialize(fd)
         @queue  = Queue.new
         @fd     = fd
-        @buffer = ""
         @thread = Thread.new { work }
         at_exit { finish! }
       end
