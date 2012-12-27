@@ -135,7 +135,7 @@ module Daybreak
     def compact!
       # Create a new temporary file
       tmp_file = Tempfile.new File.basename(@file_name)
-      copy_db  = DB.new tmp_file.path
+      copy_db  = self.class.new tmp_file.path
 
       # Copy the database key by key into the temporary table
       each do |key, i|
