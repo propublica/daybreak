@@ -77,6 +77,25 @@ describe "database functions" do
     assert_equal nil, db2['19']
   end
 
+  it "should compact subclassed dbs" do
+    class StringDB < Daybreak::DB
+      def serialize(it)
+        it.to_s
+      end
+
+      def parse(it)
+        it
+      end
+    end
+
+    db = StringDB.new 'string.db'
+    db[1] = 'one'
+    db.compact!
+    assert_equal 'one', db[1]
+    db.empty!
+    db.close!
+  end
+
   after do
     @db.empty!
     @db.close!
