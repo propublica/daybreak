@@ -26,10 +26,9 @@ module Daybreak
     # @param [#to_s] key the key of the storage slot in the database
     # @param value the value to store
     # @param [Boolean] sync if true, sync this value immediately
-    # @param [Boolean] delete if true, mark the record deleted
-    def []=(key, value, sync = false, delete = false)
+    def []=(key, value, sync = false)
       key = key.to_s
-      @writer.write(Record.new(key, serialize(value), delete))
+      @writer.write(Record.new(key, serialize(value)))
       flush! if sync
       @table[key] = value
     end
@@ -46,8 +45,10 @@ module Daybreak
     # @param [#to_s] key the key of the storage slot in the database
     # @param [Boolean] sync if true, sync this deletion immediately
     def delete(key, sync = false)
-      set key, nil, sync, true
-      @table.delete key.to_s
+      key = key.to_s
+      @writer.write(Record.new(key, '', true))
+      flush! if sync
+      @table.delete key
     end
 
     # delete! immediately deletes the key on disk.
