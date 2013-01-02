@@ -26,9 +26,10 @@ module Daybreak
     # @param [#to_s] key the key of the storage slot in the database
     # @param value the value to store
     # @param [Boolean] sync if true, sync this value immediately
-    def []=(key, value, sync = false)
+    # @param [Boolean] dekete if true, mark the record deleted
+    def []=(key, value, sync = false, delete = false)
       key = key.to_s
-      @writer.write(Record.new(key, serialize(value)))
+      @writer.write(Record.new(key, serialize(value), delete))
       flush! if sync
       @table[key] = value
     end
@@ -39,6 +40,20 @@ module Daybreak
     # @param value the value to store
     def set!(key, value)
       set key, value, true
+    end
+
+    # Delete a key from the database
+    # @param [#to_s] key the key of the storage slot in the database
+    # @param [Boolean] sync if true, sync this deletion immediately
+    def delete(key, sync = false)
+      set key, nil, sync, true
+      @table.delete key.to_s
+    end
+
+    # delete! immediately deletes the key on disk.
+    # @param [#to_s] key the key of the storage slot in the database
+    def delete!(key)
+      delete key, true
     end
 
     # Retrieve a value at key from the database. If the default value was specified
@@ -139,7 +154,7 @@ module Daybreak
       copy_db  = self.class.new tmp_file.path
 
       # Copy the database key by key into the temporary table
-      each do |key, i|
+      each do |key|
         copy_db.set(key, get(key))
       end
       copy_db.close!
@@ -162,7 +177,11 @@ module Daybreak
     # call this again.
     def read!
       @reader.read do |record|
-        @table[record.key] = parse record.data
+        if record.deleted?
+          @table.delete record.key
+        else
+          @table[record.key] = parse(record.data)
+        end
       end
     end
   end

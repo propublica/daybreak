@@ -10,14 +10,18 @@ module Daybreak
     include Locking
 
     # The mask a record uses to check for deletion.
-    DELETION_MASK = (1 << 32)
+    DELETION_MASK = (1 << 31)
 
     attr_accessor :key, :data
 
     def initialize(key = nil, data = nil, deleted = false)
       @key  = key
       @data = data
-      @deleted = deleted
+      if deleted
+        @deleted = DELETION_MASK
+      else
+        @deleted = 0
+      end
     end
 
     # Read a record from an open io source, check the CRC, and set <tt>@key</tt>
@@ -47,13 +51,13 @@ module Daybreak
     end
 
     def deleted?
-      @deleted == 1
+      @deleted > 0
     end
 
     private
 
     def byte_string
-      @byte_string ||= part(@key) + part(@data)
+      @byte_string ||= part(@key, @key.bytesize + @deleted) + part(@data, @data.bytesize)
     end
 
     def crc_string
@@ -66,8 +70,8 @@ module Daybreak
 
     def read_key(io)
       masked   = read32 io
-      @deleted = masked | DELETION_MASK
-      length   = masked >> 1
+      @deleted = masked & DELETION_MASK
+      length   = masked & (DELETION_MASK - 1)
       io.read length
     end
 
@@ -76,8 +80,8 @@ module Daybreak
       raw.unpack('N')[0]
     end
 
-    def part(data)
-      [data.bytesize].pack('N') + data
+    def part(data, length)
+      [length].pack('N') + data
     end
   end
 end

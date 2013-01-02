@@ -90,10 +90,25 @@ describe "database functions" do
 
     db = StringDB.new 'string.db'
     db[1] = 'one'
+    db[2] = 'two'
+    db.delete 2
     db.compact!
-    assert_equal 'one', db[1]
+    assert_equal db[1], 'one'
+    assert_equal db[2], nil
     db.empty!
     db.close!
+  end
+
+  it "should handle deletions" do
+    @db[1] = 'one'
+    @db[2] = 'two'
+    @db.delete 'two'
+    assert !@db.has_key?('two')
+    assert_equal @db['two'], nil
+
+    db2 = Daybreak::DB.new DB_PATH
+    assert !db2.has_key?('two')
+    assert_equal db2['two'], nil
   end
 
   after do
