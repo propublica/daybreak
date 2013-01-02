@@ -28,8 +28,7 @@ module Daybreak
     # @param [Boolean] sync if true, sync this value immediately
     def []=(key, value, sync = false)
       key = key.to_s
-      @writer.write(Record.new(key, serialize(value)))
-      flush! if sync
+      write key, value, sync
       @table[key] = value
     end
     alias_method :set, :"[]="
@@ -39,6 +38,21 @@ module Daybreak
     # @param value the value to store
     def set!(key, value)
       set key, value, true
+    end
+
+    # Delete a key from the database
+    # @param [#to_s] key the key of the storage slot in the database
+    # @param [Boolean] sync if true, sync this deletion immediately
+    def delete(key, sync = false)
+      key = key.to_s
+      write key, '', sync, true
+      @table.delete key
+    end
+
+    # delete! immediately deletes the key on disk.
+    # @param [#to_s] key the key of the storage slot in the database
+    def delete!(key)
+      delete key, true
     end
 
     # Retrieve a value at key from the database. If the default value was specified
@@ -112,6 +126,7 @@ module Daybreak
       @writer.truncate!
       reset!
     end
+    alias_method :clear, :empty!
 
     # Force all queued commits to be written to disk.
     def flush!
@@ -138,7 +153,7 @@ module Daybreak
       copy_db  = self.class.new tmp_file.path
 
       # Copy the database key by key into the temporary table
-      each do |key, i|
+      each do |key|
         copy_db.set(key, get(key))
       end
       copy_db.close!
@@ -161,8 +176,19 @@ module Daybreak
     # call this again.
     def read!
       @reader.read do |record|
-        @table[record.key] = parse record.data
+        if record.deleted?
+          @table.delete record.key
+        else
+          @table[record.key] = parse(record.data)
+        end
       end
+    end
+
+    private
+
+    def write(key, value, sync = false, delete = false)
+      @writer.write(Record.new(key, serialize(value), delete))
+      flush! if sync
     end
   end
 end
