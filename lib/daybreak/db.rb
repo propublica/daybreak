@@ -46,7 +46,7 @@ module Daybreak
     # @param [Boolean] sync if true, sync this deletion immediately
     def delete(key, sync = false)
       key = key.to_s
-      @writer.write(Record.new(key, serialize(nil), true))
+      @writer.write(Record.new(key, '', true))
       flush! if sync
       @table.delete key
     end
