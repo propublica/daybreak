@@ -188,7 +188,7 @@
 $ gem install daybreak
 </pre>
 
-    <p>(v0.0.4) | <a href="http://rdoc.info/github/propublica/daybreak/master/frames">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
+    <p>(v0.1.0) | <a href="http://rdoc.info/github/propublica/daybreak/master/frames">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
 
     <h2>Overview</h2>
 
@@ -305,23 +305,26 @@ $ gem install daybreak
       Daybreak stores its data in the simplest file format imaginable. Each
       Daybreak file is an append only log consisting of alternating key and value cells.
       Every key-value pair also has an associated 32 bit CRC field to protect against bad data.
-      Each cell starts with a 32 bit unsigned big-endian integer representing the
-      length of the value stored in the cell. Here is how a database of one record might
-      look like:
+      Each cell starts with a 32 bit unsigned big-endian integer. The key cell has a deleted
+      flag that is one bit in the most significant digit, and 31 bits representing
+      the cell's length. The data cell is just a 32 bit length.
+      Here is how a database of one record might look:
     </p>
 
       <table>
         <tr>
+          <th class="key">Deleted?</th>
           <th class="key" colspan="2">Key</th>
           <th class="key" colspan="2">Value</th>
           <th class="key">CRC</th>
         </tr>
         <tr>
-          <td>Encoded Length</td>
-          <td>String Key</td>
-          <td>Encoded Length</td>
+          <td rowspan="2">Deleted Flag (1&nbsp;bit)</td>
+          <td>Encoded Length (31 bits)</td>
+          <td>String&nbsp;Key</td>
+          <td>Encoded&nbsp;Length (32&nbsp;bits)</td>
           <td>Marshalled Value</td>
-          <td rowspan="2"><small>CRC32(key, value)</small></td>
+          <td rowspan="2"><small>CRC32(key,&nbsp;value)</small></td>
         </tr>
         <tr>
           <td>(...)0000101</td>
@@ -351,6 +354,8 @@ $ gem install daybreak
     <h2>Change Log</h2>
 
     <dl>
+      <dd><b>0.1.0</b></dd>
+      <dt>Make Daybreak compatible with <a href="https://github.com/minad/moneta">moneta</a>, and add a delete operation. This represents a slight change to the log file format. (thanks <a href="https://github.com/minad">minad</a>)</dt>
       <dd><b>0.0.4</b></dd>
       <dt>Fix a bug in compact! to allow for inhherited DBs (thanks <a href="https://github.com/jlapier">jlapier</a>)</dt>
       <dd><b>0.0.3</b></dd>
