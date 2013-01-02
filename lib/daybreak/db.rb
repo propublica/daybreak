@@ -26,7 +26,7 @@ module Daybreak
     # @param [#to_s] key the key of the storage slot in the database
     # @param value the value to store
     # @param [Boolean] sync if true, sync this value immediately
-    # @param [Boolean] dekete if true, mark the record deleted
+    # @param [Boolean] delete if true, mark the record deleted
     def []=(key, value, sync = false, delete = false)
       key = key.to_s
       @writer.write(Record.new(key, serialize(value), delete))
