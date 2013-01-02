@@ -112,7 +112,7 @@ module Daybreak
       @writer.truncate!
       reset!
     end
-    alias_method :empty!, :clear
+    alias_method :clear, :empty!
 
     # Force all queued commits to be written to disk.
     def flush!

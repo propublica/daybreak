@@ -9,11 +9,15 @@ module Daybreak
     class CorruptDataError < Exception; end
     include Locking
 
+    # The mask a record uses to check for deletion.
+    DELETION_MASK = (1 << 32)
+
     attr_accessor :key, :data
 
-    def initialize(key = nil, data = nil)
+    def initialize(key = nil, data = nil, deleted = false)
       @key  = key
       @data = data
+      @deleted = deleted
     end
 
     # Read a record from an open io source, check the CRC, and set <tt>@key</tt>
@@ -21,8 +25,8 @@ module Daybreak
     # @param [#read] io an IO instance to read from
     def read(io)
       lock io do
-        @key  = read_bytes(io)
-        @data = read_bytes(io)
+        @key  = read_key(io)
+        @data = read_data(io)
         crc   = io.read(4)
         raise CorruptDataError, "CRC mismatch #{crc} should be #{crc_string}" unless crc == crc_string
       end
@@ -42,6 +46,10 @@ module Daybreak
       new.read(io)
     end
 
+    def deleted?
+      @deleted == 1
+    end
+
     private
 
     def byte_string
@@ -52,10 +60,20 @@ module Daybreak
       [Zlib.crc32(byte_string, 0)].pack('N')
     end
 
-    def read_bytes(io)
+    def read_data(io)
+      io.read read32(io)
+    end
+
+    def read_key(io)
+      masked   = read32 io
+      @deleted = masked | DELETION_MASK
+      length   = masked >> 1
+      io.read length
+    end
+
+    def read32(io)
       raw = io.read(4)
-      length = raw.unpack('N')[0]
-      io.read(length)
+      raw.unpack('N')[0]
     end
 
     def part(data)
