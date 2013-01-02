@@ -28,8 +28,7 @@ module Daybreak
     # @param [Boolean] sync if true, sync this value immediately
     def []=(key, value, sync = false)
       key = key.to_s
-      @writer.write(Record.new(key, serialize(value)))
-      flush! if sync
+      write key, value, sync
       @table[key] = value
     end
     alias_method :set, :"[]="
@@ -46,8 +45,7 @@ module Daybreak
     # @param [Boolean] sync if true, sync this deletion immediately
     def delete(key, sync = false)
       key = key.to_s
-      @writer.write(Record.new(key, '', true))
-      flush! if sync
+      write key, '', sync, true
       @table.delete key
     end
 
@@ -184,6 +182,13 @@ module Daybreak
           @table[record.key] = parse(record.data)
         end
       end
+    end
+
+    private
+
+    def write(key, value, sync = false, delete = false)
+      @writer.write(Record.new(key, serialize(value), delete))
+      flush! if sync
     end
   end
 end
