@@ -10,7 +10,7 @@ module Daybreak
 
     # Close the Reader's file descriptor.
     def close!
-      @fd.close unless @fd.nil?
+      @fd.close unless @fd.nil? || !@fd.closed?
     end
 
     # Read all values from the aof file.
@@ -19,18 +19,14 @@ module Daybreak
     # close and reread the whole db file, but since cross process
     # consistency is handled by the user, this should be fair warning.
     def read(&blk)
-      reopen!
+      open!
       while !@fd.eof?
         blk.call(Record.read(@fd))
       end
+      close!
     end
 
     private
-
-    def reopen!
-      close!
-      open!
-    end
 
     def open!
       @fd = File.open @file_name, 'r'
