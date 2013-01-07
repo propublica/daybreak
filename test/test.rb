@@ -111,6 +111,14 @@ describe "database functions" do
     assert_equal db2['two'], nil
   end
 
+  it "should close and reopen the file when clearing the database" do
+    begin
+      1000.times {@db.clear}
+    rescue
+      flunk
+    end
+  end
+
   after do
     @db.empty!
     @db.close!

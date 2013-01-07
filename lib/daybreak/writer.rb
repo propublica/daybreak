@@ -34,9 +34,9 @@ module Daybreak
 
     # Truncate the file.
     def truncate!
-      flush!
+      finish!
       @fd.truncate(0)
-      open!
+      @fd.pos = 0
     end
 
     private

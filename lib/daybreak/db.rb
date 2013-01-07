@@ -124,7 +124,9 @@ module Daybreak
     # Reset and empty the database file.
     def empty!
       @writer.truncate!
+      close!
       reset!
+      read!
     end
     alias_method :clear, :empty!
 
