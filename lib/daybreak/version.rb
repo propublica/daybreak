@@ -1,4 +1,4 @@
 module Daybreak
   # Updated using SemVer
-  VERSION = "0.1.0"
+  VERSION = "0.1.1"
 end
