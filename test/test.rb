@@ -1,8 +1,12 @@
-require 'rubygems'
-require 'simplecov'
 require 'set'
-SimpleCov.start
-SimpleCov.command_name "Unit tests"
+
+begin
+  require 'simplecov'
+  SimpleCov.start
+  SimpleCov.command_name "Unit tests"
+rescue Exception => ex
+  puts "No coverage report generated: #{ex.message}"
+end
 
 require File.expand_path(File.dirname(__FILE__)) + '/test_helper.rb'
 
