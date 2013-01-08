@@ -145,9 +145,9 @@ module Daybreak
 
     # Compact the database to remove stale commits and reduce the file size.
     def compact!
-      # Create a new temporary file
-      tmp_file = Tempfile.new File.basename(@file_name)
-      copy_db  = self.class.new tmp_file.path
+      # Create a new temporary database
+      tmp_file = @file_name + "-#{$$}-#{Thread.current.object_id}"
+      copy_db  = self.class.new tmp_file
 
       # Copy the database key by key into the temporary table
       each do |key, value|
@@ -155,14 +155,10 @@ module Daybreak
       end
       copy_db.close!
 
-      # Empty this database
-      empty!
       close!
 
       # Move the copy into place
-      tmp_file.close
-      FileUtils.mv tmp_file.path, @file_name
-      tmp_file.unlink
+      File.rename tmp_file, @file_name
 
       # Reset this database
       reset!
