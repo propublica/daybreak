@@ -155,7 +155,7 @@ module Daybreak
       copy_db  = self.class.new tmp_file.path
 
       # Copy the database key by key into the temporary table
-      each do |key|
+      each do |key, value|
         copy_db.set(key, get(key))
       end
       copy_db.close!
