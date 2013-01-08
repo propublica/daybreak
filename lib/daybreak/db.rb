@@ -15,9 +15,8 @@ module Daybreak
     # @yieldparam [String] key the key to be stored.
     def initialize(file, default=nil, &blk)
       @file_name = file
+      @default = block_given? ? blk : default
       reset!
-      @default = default
-      @default = blk if block_given?
       read!
     end
 
