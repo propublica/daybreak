@@ -69,19 +69,20 @@ module Daybreak
       # Loop and block if we don't have work to do or if
       # the file isn't ready for another write just yet.
       def work
-        buf = ''
-        loop do
+        buf, finished = '', false
+        until finished && buf.empty?
           record = @queue.pop
-          unless record
-            @fd.flush
-            break
+          if record
+            buf << Record.serialize(record)
+          else
+            finished = true
           end
-          buf << Record.serialize(record)
           read, write = IO.select [], [@fd]
           if write and fd = write.first
             lock(fd, File::LOCK_EX) { buf = try_write fd, buf }
           end
         end
+        @fd.flush
       end
 
       # Try and write the buffer to the file via non blocking file writes.
