@@ -64,12 +64,7 @@ module Daybreak
       if @table.has_key? key
         @table[key]
       elsif default?
-        if @default.is_a? Proc
-          value = @default.call(key)
-        else
-          value = @default
-        end
-        set key, value
+        set key, Proc === @default ? @default.call(key) : @default
       end
     end
     alias_method :get, :"[]"
@@ -78,8 +73,8 @@ module Daybreak
     # @yield [key, value] blk the iterator for each key value pair.
     # @yieldparam [String] key the key.
     # @yieldparam value the value from the database.
-    def each(&blk)
-      keys.each { |k| blk.call(k, get(k)) }
+    def each
+      keys.each { |k| yield(k, get(k)) }
     end
 
     # Does this db have a default value.
@@ -104,6 +99,7 @@ module Daybreak
     def length
       @table.keys.length
     end
+    alias_method :size, :length
 
     # Serialize the data for writing to disk, if you don't want to use <tt>Marshal</tt>
     # overwrite this method.
