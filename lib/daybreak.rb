@@ -1,6 +1,7 @@
 require 'tempfile'
 require 'thread'
 require 'fcntl'
+require 'zlib'
 
 require 'daybreak/version'
 require 'daybreak/locking'

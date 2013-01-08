@@ -173,11 +173,11 @@ module Daybreak
     # Read all values from the log file. If you want to check for changed data
     # call this again.
     def read!
-      @reader.read do |record|
-        if record.deleted?
-          @table.delete record.key
+      @reader.read do |(key, data, deleted)|
+        if deleted
+          @table.delete key
         else
-          @table[record.key] = parse(record.data)
+          @table[key] = parse(data)
         end
       end
     end
@@ -185,7 +185,7 @@ module Daybreak
     private
 
     def write(key, value, sync = false, delete = false)
-      @writer.write(Record.new(key, serialize(value), delete))
+      @writer.write(key, serialize(value), delete)
       flush! if sync
     end
   end

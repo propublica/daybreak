@@ -12,8 +12,8 @@ module Daybreak
     end
 
     # Send a record to the workers queue.
-    def write(record)
-      @worker.enqueue record
+    def write(key, data, deleted)
+      @worker.enqueue [key, data, deleted]
     end
 
     # Finish writing
@@ -65,20 +65,20 @@ module Daybreak
 
       # Queue up a write to be committed later.
       def enqueue(record)
-        @queue << record.representation
+        @queue << record
       end
 
       # Loop and block if we don't have work to do or if
       # the file isn't ready for another write just yet.
       def work
-        buf = ""
+        buf = ''
         loop do
-          str = @queue.pop
-          if str.nil?
+          record = @queue.pop
+          unless record
             @fd.flush
             break
           end
-          buf << str
+          buf << Record.representation(record)
           read, write = IO.select [], [@fd]
           if write and fd = write.first
             lock(fd, File::LOCK_EX) { buf = try_write fd, buf }
@@ -98,7 +98,7 @@ module Daybreak
           if s < buf.length
             buf = buf[s..-1] # didn't finish
           else
-            buf = ""
+            buf = ''
           end
         rescue Errno::EAGAIN
           buf = buf # try this again
