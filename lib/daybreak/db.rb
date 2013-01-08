@@ -185,7 +185,7 @@ module Daybreak
     private
 
     def write(key, value, sync = false, delete = false)
-      @writer.write(key, serialize(value), delete)
+      @writer.write([key, serialize(value), delete])
       flush! if sync
     end
   end

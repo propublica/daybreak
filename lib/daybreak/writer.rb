@@ -5,15 +5,13 @@ module Daybreak
     # Open up the file, ready it for binary and nonblocking writing.
     def initialize(file)
       @file = file
-
       open!
-
       @worker = Worker.new(@fd)
     end
 
     # Send a record to the workers queue.
-    def write(key, data, deleted)
-      @worker.enqueue [key, data, deleted]
+    def write(record)
+      @worker.enqueue record
     end
 
     # Finish writing
