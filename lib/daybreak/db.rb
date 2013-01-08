@@ -15,9 +15,8 @@ module Daybreak
     # @yieldparam [String] key the key to be stored.
     def initialize(file, default=nil, &blk)
       @file_name = file
+      @default = block_given? ? blk : default
       reset!
-      @default = default
-      @default = blk if block_given?
       read!
     end
 
@@ -64,12 +63,7 @@ module Daybreak
       if @table.has_key? key
         @table[key]
       elsif default?
-        if @default.is_a? Proc
-          value = @default.call(key)
-        else
-          value = @default
-        end
-        set key, value
+        set key, Proc === @default ? @default.call(key) : @default
       end
     end
     alias_method :get, :"[]"
@@ -78,8 +72,8 @@ module Daybreak
     # @yield [key, value] blk the iterator for each key value pair.
     # @yieldparam [String] key the key.
     # @yieldparam value the value from the database.
-    def each(&blk)
-      keys.each { |k| blk.call(k, get(k)) }
+    def each
+      keys.each { |k| yield(k, get(k)) }
     end
 
     # Does this db have a default value.
@@ -104,6 +98,7 @@ module Daybreak
     def length
       @table.keys.length
     end
+    alias_method :size, :length
 
     # Serialize the data for writing to disk, if you don't want to use <tt>Marshal</tt>
     # overwrite this method.
@@ -155,7 +150,7 @@ module Daybreak
       copy_db  = self.class.new tmp_file.path
 
       # Copy the database key by key into the temporary table
-      each do |key|
+      each do |key, value|
         copy_db.set(key, get(key))
       end
       copy_db.close!
@@ -177,11 +172,11 @@ module Daybreak
     # Read all values from the log file. If you want to check for changed data
     # call this again.
     def read!
-      @reader.read do |record|
-        if record.deleted?
-          @table.delete record.key
+      @reader.read do |(key, data, deleted)|
+        if deleted
+          @table.delete key
         else
-          @table[record.key] = parse(record.data)
+          @table[key] = parse(data)
         end
       end
     end
@@ -189,7 +184,7 @@ module Daybreak
     private
 
     def write(key, value, sync = false, delete = false)
-      @writer.write(Record.new(key, serialize(value), delete))
+      @writer.write([key, serialize(value), delete])
       flush! if sync
     end
   end
