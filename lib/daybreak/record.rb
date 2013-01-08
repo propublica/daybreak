@@ -32,8 +32,11 @@ module Daybreak
       lock io do
         record = []
         masked = read32(io)
+        # Read the record's key bytes
         record << io.read(masked & (DELETION_MASK - 1)) <<
+          # Read the record's value bytes
           io.read(read32(io)) <<
+          # Set the deletion flag
           ((masked & DELETION_MASK) != 0)
         crc = io.read(4)
         raise CorruptDataError, 'CRC mismatch' unless crc == crc_string(key_data_string(record))
@@ -43,6 +46,7 @@ module Daybreak
 
     private
 
+    # Return the deletion flag plus two length prefixed cells
     def key_data_string(record)
       part(record[0], record[0].bytesize + (record[2] ? DELETION_MASK : 0)) << part(record[1], record[1].bytesize)
     end
