@@ -76,7 +76,7 @@ module Daybreak
             @fd.flush
             break
           end
-          buf << Record.representation(record)
+          buf << Record.serialize(record)
           read, write = IO.select [], [@fd]
           if write and fd = write.first
             lock(fd, File::LOCK_EX) { buf = try_write fd, buf }
