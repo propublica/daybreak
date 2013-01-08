@@ -23,6 +23,7 @@ module Daybreak
       while !@fd.eof?
         blk.call(Record.read(@fd))
       end
+    ensure
       close!
     end
 
