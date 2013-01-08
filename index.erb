@@ -1,5 +1,4 @@
 <%
-  require './lib/daybreak'
   def highlight(code)
     IO.popen("pygmentize -f html -l ruby", 'w+') do |p|
       p.puts code
