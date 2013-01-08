@@ -18,11 +18,12 @@ module Daybreak
     # Right now this is really expensive, every call to read will
     # close and reread the whole db file, but since cross process
     # consistency is handled by the user, this should be fair warning.
-    def read(&blk)
+    def read
       open!
       while !@fd.eof?
-        blk.call(Record.read(@fd))
+        yield Record.read(@fd)
       end
+    ensure
       close!
     end
 
