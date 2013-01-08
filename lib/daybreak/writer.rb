@@ -87,20 +87,18 @@ module Daybreak
       # Try and write the buffer to the file via non blocking file writes.
       # If the write fails try again.
       def try_write(fd, buf)
-        begin
-          if defined?(Fcntl::O_NONBLOCK)
-            s = fd.write_nonblock(buf)
-          else
-            s = fd.write(buf)
-          end
-          if s < buf.length
-            buf = buf[s..-1] # didn't finish
-          else
-            buf = ''
-          end
-        rescue Errno::EAGAIN
-          buf = buf # try this again
+        if defined?(Fcntl::O_NONBLOCK)
+          s = fd.write_nonblock(buf)
+        else
+          s = fd.write(buf)
         end
+        if s < buf.length
+          buf = buf[s..-1] # didn't finish
+        else
+          buf.clear
+        end
+        buf
+      rescue Errno::EAGAIN
         buf
       end
 
