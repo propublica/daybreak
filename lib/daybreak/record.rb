@@ -51,7 +51,7 @@ module Daybreak
     end
 
     def deleted?
-      @deleted > 0
+      @deleted != 0
     end
 
     private
