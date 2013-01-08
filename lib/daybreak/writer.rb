@@ -95,7 +95,7 @@ module Daybreak
         if s < buf.length
           buf = buf[s..-1] # didn't finish
         else
-          buf.clear
+          buf = ""
         end
         buf
       rescue Errno::EAGAIN
