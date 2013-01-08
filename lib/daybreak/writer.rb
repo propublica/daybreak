@@ -40,8 +40,7 @@ module Daybreak
     private
 
     def open!
-      @fd = File.open @file, 'a'
-      @fd.binmode
+      @fd = File.open @file, 'ab'
 
       if defined?(Fcntl::O_NONBLOCK)
         f = @fd.fcntl(Fcntl::F_GETFL, 0)

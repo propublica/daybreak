@@ -161,16 +161,17 @@ module Daybreak
     # Read all values from the log file. If you want to check for changed data
     # call this again.
     def read!
-      File.open(@file_name, 'r') do |fd|
-        fd.binmode
-        fd.advise(:sequential) if fd.respond_to? :advise
-        while !fd.eof?
-          key, data, deleted = Record.read(fd)
-          if deleted
-            @table.delete key
-          else
-            @table[key] = parse(data)
-          end
+      buf = nil
+      File.open(@file_name, 'rb') do |fd|
+        fd.flock(File::LOCK_SH)
+        buf = fd.read
+      end
+      until buf.empty?
+        key, data, deleted = Record.deserialize(buf)
+        if deleted
+          @table.delete key
+        else
+          @table[key] = parse(data)
         end
       end
     end
