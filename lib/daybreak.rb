@@ -4,7 +4,6 @@ require 'fcntl'
 require 'zlib'
 
 require 'daybreak/version'
-require 'daybreak/locking'
 require 'daybreak/record'
 require 'daybreak/writer'
 require 'daybreak/db'

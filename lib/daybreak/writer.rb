@@ -51,8 +51,6 @@ module Daybreak
     # Workers handle the actual fiddly bits of asynchronous io and
     # and handle background writes.
     class Worker
-      include Locking
-
       def initialize(fd)
         @queue  = Queue.new
         @fd     = fd
@@ -100,6 +98,16 @@ module Daybreak
         buf
       rescue Errno::EAGAIN
         buf
+      end
+
+      # Lock a file with the type <tt>lock</tt>
+      def lock(fd, lock=File::LOCK_SH)
+        fd.flock lock
+        begin
+          yield
+        ensure
+          fd.flock File::LOCK_UN
+        end
       end
 
       # finish! and start up another worker thread.
