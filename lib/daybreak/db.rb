@@ -14,9 +14,11 @@ module Daybreak
     # @yield [key] a block that will return the default value to store.
     # @yieldparam [String] key the key to be stored.
     def initialize(file, default=nil, &blk)
+      @table  = {}
       @file_name = file
+      @reader = Reader.new(@file_name)
+      @writer = Writer.new(@file_name)
       @default = block_given? ? blk : default
-      reset!
       read!
     end
 
@@ -116,11 +118,10 @@ module Daybreak
       Marshal.load(value)
     end
 
-    # Reset and empty the database file.
+    # Empty the database file.
     def empty!
       @writer.truncate!
-      close!
-      reset!
+      @table.clear
       read!
     end
     alias_method :clear, :empty!
@@ -130,24 +131,16 @@ module Daybreak
       @writer.flush!
     end
 
-    # Reset the state of the database, you should call <tt>read!</tt> after calling this.
-    def reset!
-      @table  = {}
-      @writer = Daybreak::Writer.new(@file_name)
-      @reader = Daybreak::Reader.new(@file_name)
-    end
-
     # Close the database for reading and writing.
     def close!
       @writer.close!
-      @reader.close!
     end
 
     # Compact the database to remove stale commits and reduce the file size.
     def compact!
-      # Create a new temporary file
-      tmp_file = Tempfile.new File.basename(@file_name)
-      copy_db  = self.class.new tmp_file.path
+      # Create a new temporary database
+      tmp_file = @file_name + "-#{$$}-#{Thread.current.object_id}"
+      copy_db  = self.class.new tmp_file
 
       # Copy the database key by key into the temporary table
       each do |key, value|
@@ -155,17 +148,14 @@ module Daybreak
       end
       copy_db.close!
 
-      # Empty this database
-      empty!
       close!
 
       # Move the copy into place
-      tmp_file.close
-      FileUtils.mv tmp_file.path, @file_name
-      tmp_file.unlink
+      File.rename tmp_file, @file_name
 
-      # Reset this database
-      reset!
+      # Reopen this database
+      @writer = Writer.new(@file_name)
+      @table.clear
       read!
     end
 

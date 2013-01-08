@@ -5,7 +5,7 @@
 
 Daybreak is a simple key value store for ruby. It has user defined persistence,
 and all data is stored in a table in memory so ruby niceties are available.
-Daybreak is faster than other options ruby options like pstore and dbm.
+Daybreak is faster than other ruby options like pstore and dbm.
 
 $ gem install daybreak
 

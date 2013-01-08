@@ -8,31 +8,19 @@ module Daybreak
       @file_name = file
     end
 
-    # Close the Reader's file descriptor.
-    def close!
-      @fd.close unless @fd.nil? || !@fd.closed?
-    end
-
     # Read all values from the aof file.
     #
     # Right now this is really expensive, every call to read will
     # close and reread the whole db file, but since cross process
     # consistency is handled by the user, this should be fair warning.
     def read
-      open!
-      while !@fd.eof?
-        yield Record.read(@fd)
+      File.open(@file_name, 'r') do |fd|
+        fd.binmode
+        fd.advise(:sequential) if fd.respond_to? :advise
+        while !fd.eof?
+          yield Record.read(fd)
+        end
       end
-    ensure
-      close!
-    end
-
-    private
-
-    def open!
-      @fd = File.open @file_name, 'r'
-      @fd.binmode
-      @fd.advise(:sequential) if @fd.respond_to? :advise
     end
   end
 end
