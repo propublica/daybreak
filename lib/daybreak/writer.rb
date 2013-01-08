@@ -76,7 +76,7 @@ module Daybreak
           end
           read, write = IO.select [], [@fd]
           if write and fd = write.first
-            lock(fd, File::LOCK_EX) { buf = try_write fd, buf }
+            lock(fd) { buf = try_write fd, buf }
           end
         end
         @fd.flush
@@ -101,8 +101,8 @@ module Daybreak
       end
 
       # Lock a file with the type <tt>lock</tt>
-      def lock(fd, lock=File::LOCK_SH)
-        fd.flock lock
+      def lock(fd)
+        fd.flock File::LOCK_EX
         begin
           yield
         ensure
