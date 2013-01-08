@@ -9,7 +9,6 @@ module Daybreak
     class CorruptDataError < Exception; end
 
     extend self
-    extend Locking
 
     # The mask a record uses to check for deletion.
     DELETION_MASK = 1 << 31
@@ -28,20 +27,17 @@ module Daybreak
 
     # Create a new record to read from IO.
     # @param [#read] io an IO instance to read from
-    def read(io)
-      lock io do
-        record = []
-        masked = read32(io)
-        # Read the record's key bytes
-        record << io.read(masked & (DELETION_MASK - 1)) <<
-          # Read the record's value bytes
-          io.read(read32(io)) <<
-          # Set the deletion flag
-          ((masked & DELETION_MASK) != 0)
-        crc = io.read(4)
-        raise CorruptDataError, 'CRC mismatch' unless crc == crc_string(key_data_string(record))
-        record
-      end
+    def deserialize(buf)
+      record = []
+      masked = read32(buf)
+      # Read the record's key bytes
+      record << buf.slice!(0, masked & (DELETION_MASK - 1)) <<
+        # Read the record's value bytes
+        buf.slice!(0, read32(buf)) <<
+        # Set the deletion flag
+        ((masked & DELETION_MASK) != 0)
+      raise CorruptDataError, 'CRC mismatch' unless buf.slice!(0, 4) == crc_string(key_data_string(record))
+      record
     end
 
     private
@@ -59,9 +55,8 @@ module Daybreak
       [length].pack('N') << data
     end
 
-    def read32(io)
-      raw = io.read(4)
-      raw.unpack('N')[0]
+    def read32(buf)
+      buf.slice!(0, 4).unpack('N')[0]
     end
   end
 end

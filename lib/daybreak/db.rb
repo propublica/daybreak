@@ -16,7 +16,6 @@ module Daybreak
     def initialize(file, default=nil, &blk)
       @table  = {}
       @file_name = file
-      @reader = Reader.new(@file_name)
       @writer = Writer.new(@file_name)
       @default = block_given? ? blk : default
       read!
@@ -162,7 +161,13 @@ module Daybreak
     # Read all values from the log file. If you want to check for changed data
     # call this again.
     def read!
-      @reader.read do |(key, data, deleted)|
+      buf = nil
+      File.open(@file_name, 'rb') do |fd|
+        fd.flock(File::LOCK_SH)
+        buf = fd.read
+      end
+      until buf.empty?
+        key, data, deleted = Record.deserialize(buf)
         if deleted
           @table.delete key
         else
