@@ -1,87 +1,63 @@
 module Daybreak
   # Records define how data is serialized and read from disk.
-  class Record
+  module Record
     # Thrown when either key or data is missing
     class UnnacceptableDataError < Exception; end
 
     # Thrown when there is a CRC mismatch between the data from the disk
     # and what was written to disk previously.
     class CorruptDataError < Exception; end
-    include Locking
+
+    extend self
+    extend Locking
 
     # The mask a record uses to check for deletion.
-    DELETION_MASK = (1 << 31)
-
-    attr_accessor :key, :data
-
-    def initialize(key = nil, data = nil, deleted = false)
-      @key  = key
-      @data = data
-      if deleted
-        @deleted = DELETION_MASK
-      else
-        @deleted = 0
-      end
-    end
+    DELETION_MASK = 1 << 31
 
     # Read a record from an open io source, check the CRC, and set <tt>@key</tt>
     # and <tt>@data</tt>.
     # @param [#read] io an IO instance to read from
-    def read(io)
-      lock io do
-        @key  = read_key(io)
-        @data = read_data(io)
-        crc   = io.read(4)
-        raise CorruptDataError, "CRC mismatch #{crc} should be #{crc_string}" unless crc == crc_string
-      end
-      self
-    end
 
     # The serialized representation of the key value pair plus the CRC.
     # @return [String]
-    def representation
-      raise UnnacceptableDataError, "key and data must be defined" if @key.nil? || @data.nil?
-      byte_string + crc_string
+    def representation(record)
+      raise UnnacceptableDataError, 'key and data must be defined' unless record[0] && record[1]
+      s = byte_string(record)
+      s << crc_string(s)
     end
 
     # Create a new record to read from IO.
     # @param [#read] io an IO instance to read from
-    def self.read(io)
-      new.read(io)
-    end
-
-    def deleted?
-      @deleted > 0
+    def read(io)
+      lock io do
+        record = []
+        masked = read32(io)
+        record << io.read(masked & (DELETION_MASK - 1))
+        record << io.read(read32(io))
+        record << ((masked & DELETION_MASK) != 0)
+        crc = io.read(4)
+        raise CorruptDataError, 'CRC mismatch' unless crc == crc_string(byte_string(record))
+        record
+      end
     end
 
     private
 
-    def byte_string
-      @byte_string ||= part(@key, @key.bytesize + @deleted) + part(@data, @data.bytesize)
+    def byte_string(record)
+      part(record[0], record[0].bytesize + (record[2] ? DELETION_MASK : 0)) << part(record[1], record[1].bytesize)
     end
 
-    def crc_string
-      [Zlib.crc32(byte_string, 0)].pack('N')
+    def crc_string(s)
+      [Zlib.crc32(s, 0)].pack('N')
     end
 
-    def read_data(io)
-      io.read read32(io)
-    end
-
-    def read_key(io)
-      masked   = read32 io
-      @deleted = masked & DELETION_MASK
-      length   = masked & (DELETION_MASK - 1)
-      io.read length
+    def part(data, length)
+      [length].pack('N') << data
     end
 
     def read32(io)
       raw = io.read(4)
       raw.unpack('N')[0]
-    end
-
-    def part(data, length)
-      [length].pack('N') + data
     end
   end
 end
