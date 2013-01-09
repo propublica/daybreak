@@ -13,10 +13,6 @@ module Daybreak
     # The mask a record uses to check for deletion.
     DELETION_MASK = 1 << 31
 
-    # Read a record from an open io source, check the CRC, and set <tt>@key</tt>
-    # and <tt>@data</tt>.
-    # @param [#read] io an IO instance to read from
-
     # The serialized representation of the key value pair plus the CRC.
     # @return [String]
     def serialize(record)
