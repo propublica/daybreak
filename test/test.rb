@@ -86,11 +86,11 @@ describe "database functions" do
   it "should handle deletions" do
     @db[1] = 'one'
     @db[2] = 'two'
-    @db.delete 'two'
+    @db.delete! 'two'
     assert !@db.has_key?('two')
     assert_equal @db['two'], nil
-
     db2 = Daybreak::DB.new DB_PATH
+
     assert !db2.has_key?('two')
     assert_equal db2['two'], nil
   end

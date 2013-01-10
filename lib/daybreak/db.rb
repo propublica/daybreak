@@ -115,6 +115,8 @@ module Daybreak
       end
     end
 
+    # Lock the database for an exclusive commit accross processes and threads
+    # @yield a block where every change to the database is synced
     def lock
       @mutex.synchronize do
         exclusive do
@@ -126,6 +128,7 @@ module Daybreak
       end
     end
 
+    # Remove all keys and values from the database
     def clear
       @mutex.synchronize do
         exclusive do
@@ -137,6 +140,7 @@ module Daybreak
       end
     end
 
+    # Compact the database to remove stale commits and reduce the file size.
     def compact
       tmpfile = "#{@file}-#{$$}-#{Thread.current.object_id}"
       tmp = File.open(tmpfile, 'wb')
@@ -162,6 +166,7 @@ module Daybreak
       File.unlink(tmpfile) if File.exists? tmpfile
     end
 
+    # Close the database for reading and writing.
     def close
       finish
       @in.close
