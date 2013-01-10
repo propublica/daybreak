@@ -1,12 +1,8 @@
 require 'thread'
 require 'zlib'
 
-# Daybreak, a simple dimple key value store for ruby.
-module Daybreak
-  # The root path for Daybreak
-  ROOT = File.expand_path(File.dirname(__FILE__))
-end
+$: << File.join(File.expand_path(File.dirname(__FILE__)))
 
-require "#{Daybreak::ROOT}/daybreak/version"
-require "#{Daybreak::ROOT}/daybreak/record"
-require "#{Daybreak::ROOT}/daybreak/db"
+require "daybreak/version"
+require "daybreak/record"
+require "daybreak/db"
