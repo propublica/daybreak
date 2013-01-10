@@ -44,7 +44,7 @@ module Daybreak
 
     def set!(key, value)
       set(key, value)
-      flush
+      @mutex.synchronize { flush }
       value
     end
 
