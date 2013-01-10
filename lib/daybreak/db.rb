@@ -4,6 +4,8 @@ module Daybreak
   class DB
     include Enumerable
 
+    attr_accessor :default
+
     # Create a new Daybreak::DB. The second argument is the default value
     # to store when accessing a previously unset key, this follows the
     # Hash standard.
@@ -56,11 +58,6 @@ module Daybreak
 
     def has_key?(key)
       @table.has_key?(@serializer.key_for(key))
-    end
-
-    # Does this db have a default value.
-    def default?
-      !@default.nil?
     end
 
     def size
