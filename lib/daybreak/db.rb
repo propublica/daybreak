@@ -14,9 +14,10 @@ module Daybreak
     #  not yet in the database.
     # @yield [key] a block that will return the default value to store.
     # @yieldparam [String] key the key to be stored.
-    def initialize(file, default = nil, serializer = Serializer, &block)
-      @file, @serializer = file, serializer.new
-      @default = block ? block : default
+    def initialize(options, &block)
+      raise 'You must specify a :file' unless @file = options[:file]
+      @serializer = (options[:serializer] || Serializer).new
+      @default = block ? block : options[:default]
       @out = File.open(@file, 'ab')
       @queue = Queue.new
       @mutex = Mutex.new

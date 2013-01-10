@@ -12,7 +12,7 @@ require File.expand_path(File.dirname(__FILE__)) + '/test_helper.rb'
 
 describe "database functions" do
   before do
-    @db = Daybreak::DB.new DB_PATH
+    @db = Daybreak::DB.new :file => DB_PATH
   end
 
   it "should insert" do
@@ -30,7 +30,7 @@ describe "database functions" do
     @db.sync
 
     assert_equal @db['1'], '4'
-    db2 = Daybreak::DB.new DB_PATH
+    db2 = Daybreak::DB.new :file => DB_PATH
     assert_equal db2['1'], '4'
     assert_equal db2['4'], '1'
     db2.close
@@ -48,20 +48,20 @@ describe "database functions" do
   end
 
   it "should allow for default values" do
-    default_db = Daybreak::DB.new(DB_PATH, 0)
+    default_db = Daybreak::DB.new(:file => DB_PATH, :default => 0)
     assert_equal default_db[1], 0
     default_db[1] = 1
     assert_equal default_db[1], 1
   end
 
   it "should handle default values that are procs" do
-    db = Daybreak::DB.new(DB_PATH) {|key| Set.new }
+    db = Daybreak::DB.new(:file => DB_PATH) {|key| Set.new }
     assert db['foo'].is_a? Set
   end
 
   it "should be able to sync competing writes" do
     @db.set! '1', 4
-    db2 = Daybreak::DB.new DB_PATH
+    db2 = Daybreak::DB.new :file => DB_PATH
     db2.set! '1', 5
     @db.sync
     assert_equal @db['1'], 5
@@ -69,7 +69,7 @@ describe "database functions" do
 
   it "should be able to handle another process's call to compact" do
     @db.lock { 20.times {|i| @db[i] = i } }
-    db2 = Daybreak::DB.new DB_PATH
+    db2 = Daybreak::DB.new :file => DB_PATH
     @db.lock { 20.times {|i| @db[i] = i } }
     @db.compact
     db2.sync
@@ -79,7 +79,7 @@ describe "database functions" do
   it "can empty the database" do
     20.times {|i| @db[i] = i }
     @db.clear
-    db2 = Daybreak::DB.new DB_PATH
+    db2 = Daybreak::DB.new :file => DB_PATH
     assert_equal nil, db2['19']
   end
 
@@ -90,7 +90,7 @@ describe "database functions" do
     assert !@db.has_key?('two')
     assert_equal @db['two'], nil
 
-    db2 = Daybreak::DB.new DB_PATH
+    db2 = Daybreak::DB.new :file => DB_PATH
     assert !db2.has_key?('two')
     assert_equal db2['two'], nil
   end
