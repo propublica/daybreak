@@ -14,8 +14,8 @@ module Daybreak
     #  not yet in the database.
     # @yield [key] a block that will return the default value to store.
     # @yieldparam [String] key the key to be stored.
-    def initialize(options, &block)
-      raise 'You must specify a :file' unless @file = options[:file]
+    def initialize(file, options = {}, &block)
+      @file = file
       @serializer = (options[:serializer] || Serializer).new
       @default = block ? block : options[:default]
       @out = File.open(@file, 'ab')
