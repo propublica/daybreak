@@ -73,7 +73,7 @@ describe "database functions" do
     @db.lock { 20.times {|i| @db[i] = i } }
     @db.compact
     db2.sync
-    assert_equal 20, db2['19']
+    assert_equal 19, db2['19']
   end
 
   it "can empty the database" do
