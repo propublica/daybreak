@@ -104,8 +104,8 @@ describe "database functions" do
   end
 
   after do
+    @db.sync
     @db.clear
     @db.close
-    File.unlink DB_PATH
   end
 end
