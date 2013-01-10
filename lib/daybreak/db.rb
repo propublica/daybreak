@@ -29,6 +29,7 @@ module Daybreak
       sync
     end
 
+
     def [](key)
       skey = @serializer.key_for(key)
       if @table.has_key?(skey)
@@ -39,6 +40,10 @@ module Daybreak
     end
     alias_method :get, :'[]'
 
+    # Set a key in the database to be written at some future date. If the data
+    # needs to be persisted immediately, call <tt>db.set(key, value, true)</tt>.
+    # @param [#to_s] key the key of the storage slot in the database
+    # @param value the value to store
     def []=(key, value)
       key = @serializer.key_for(key)
       @queue << [key, value]
