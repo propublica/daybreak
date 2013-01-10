@@ -16,6 +16,7 @@ module Daybreak
     def initialize(file, default = nil)
       @file = file
       @out = File.open(@file, 'ab')
+      @default = default
       @queue = Queue.new
       @mutex = Mutex.new
       @flush = ConditionVariable.new
@@ -27,7 +28,11 @@ module Daybreak
 
     def [](key)
       key = key.to_s
-      @table[key]
+      if @table.has_key? key
+        @table[key]
+      elsif default?
+        set key, Proc === @default ? @default.call(key) : @default
+      end
     end
     alias_method :get, :"[]"
 
@@ -38,19 +43,32 @@ module Daybreak
     end
     alias_method :set, :"[]="
 
+    def set!(key, value)
+      set key, value
+      sync
+      get key
+    end
+
     def delete(key)
       key = key.to_s
-      @queue << [key]
-      @table.delete(ke)
+      @queue << [key, '']
+      @table.delete(key)
     end
 
     def has_key?(key)
+      key = key.to_s
       @table.has_key?(key)
+    end
+
+    # Does this db have a default value.
+    def default?
+      !@default.nil?
     end
 
     def size
       @table.size
     end
+    alias_method :length, :size
 
     def each(&block)
       @table.each(&block)
@@ -110,7 +128,6 @@ module Daybreak
       end
     ensure
       tmp.close unless tmp.closed?
-      File.unlink(tmpfile)
     end
 
     def close
@@ -183,7 +200,8 @@ module Daybreak
     end
 
     def dump
-      @table.reduce('') do |dump, key, value|
+      @table.reduce('') do |dump, rec|
+        key, value = rec
         dump << Record.serialize([key, serialize(value), false])
       end
     end
