@@ -85,19 +85,29 @@ module Daybreak
       @table.has_key?(@serializer.key_for(key))
     end
 
+    # Return the number of stored items.
+    # @return [Integer]
     def size
       @table.size
     end
     alias_method :length, :size
 
+    # Iterate over the key, value pairs in the database.
+    # @yield [key, value] blk the iterator for each key value pair.
+    # @yieldparam key the key.
+    # @yieldparam value the value from the database.
     def each(&block)
       @table.each(&block)
     end
 
+    # Return the keys in the db.
+    # @return [Array]
     def keys
       @table.keys
     end
 
+    # Sync the database with what is on disk, by first flushing changes, and
+    # then reading the file if necessary.
     def sync
       @mutex.synchronize do
         flush
