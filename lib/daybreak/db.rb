@@ -13,10 +13,10 @@ module Daybreak
     # @yieldparam [String] key the key to be stored.
     include Enumerable
 
-    def initialize(file, default = nil)
+    def initialize(file, default = nil, &blk)
       @file = file
       @out = File.open(@file, 'ab')
-      @default = default
+      @default = block_given? ? blk : default
       @queue = Queue.new
       @mutex = Mutex.new
       @flush = ConditionVariable.new
@@ -128,6 +128,7 @@ module Daybreak
       end
     ensure
       tmp.close unless tmp.closed?
+      File.unlink(tmpfile) if File.exists? tmpfile
     end
 
     def close
@@ -184,8 +185,8 @@ module Daybreak
       end
 
       until buf.empty?
-        key, value = Record.deserialize(buf)
-        if value == nil
+        key, value, deleted = Record.deserialize(buf)
+        if deleted
           @table.delete(key)
         else
           @table[key] = parse(value)
