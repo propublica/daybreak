@@ -178,7 +178,7 @@ module Daybreak
     end
 
     def flush
-      @flush.wait(@mutex)
+      @queue.empty? || @flush.wait(@mutex)
     end
 
     def reset
@@ -210,6 +210,9 @@ module Daybreak
           @size = size if size == @size + record.size
         end
       end
+    rescue Exception => ex
+      warn "Daybreak worker: #{ex.message}"
+      retry
     end
 
     def exclusive
