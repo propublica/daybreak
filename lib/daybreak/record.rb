@@ -16,7 +16,7 @@ module Daybreak
     # The serialized representation of the key value pair plus the CRC.
     # @return [String]
     def serialize(record)
-      raise UnnacceptableDataError, 'key and data must be defined' unless record[0] && record[1]
+      raise UnnacceptableDataError, 'key be defined' unless record[0]
       s = key_data_string(record)
       s << crc_string(s)
     end
