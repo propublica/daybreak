@@ -1,9 +1,18 @@
 module Daybreak
   class Format
-    VERSION = 1
-
     def initialize(serializer)
       @serializer = serializer
+    end
+
+    def read_header(input)
+      raise 'Not a Daybreak database' if input.read(8) != 'DAYBREAK'
+      len = input.read(2).unpack('n').first
+      format = input.read(len)
+      raise "Expected format #{self.class.name}, got #{format}" if format != self.class.name
+    end
+
+    def header
+      @header ||= 'DAYBREAK' << [self.class.name.size].pack('n') << self.class.name
     end
 
     def serialize(record)

@@ -19,10 +19,11 @@ module Daybreak
       @serializer = (options[:serializer] || Serializer).new
       @format = (options[:format] || Format).new(@serializer)
       @default = block ? block : options[:default]
-      @out = File.open(@file, 'ab')
       @queue = Queue.new
       @mutex = Mutex.new
       @flush = ConditionVariable.new
+      @out = File.open(@file, 'ab')
+      write_header
       reset
       @thread = Thread.new(&method(:worker))
       at_exit(&method(:finish))
@@ -134,7 +135,9 @@ module Daybreak
         exclusive do
           flush
           @out.truncate(0)
-          @out.pos = @size = 0
+          @out.pos = @in.pos = 0
+          write_header
+          @format.read_header(@in)
           @table.clear
         end
       end
@@ -144,6 +147,7 @@ module Daybreak
     def compact
       tmpfile = "#{@file}-#{$$}-#{Thread.current.object_id}"
       tmp = File.open(tmpfile, 'wb')
+      tmp.write(@format.header)
       @mutex.synchronize do
         compactsize = tmp.write(dump)
         exclusive do
@@ -151,10 +155,9 @@ module Daybreak
           # Is the new database smaller than the old one?
           if newsize != compactsize
             # Check if database changed in the meantime
-            if newsize > @size
-              @in.pos = @size
+            if newsize > @in.pos
               # Append changed journal entries
-              tmp.write(@in.read(newsize - @size))
+              tmp.write(@in.read(newsize - @in.pos))
             end
             tmp.close
             File.rename(tmpfile, @file)
@@ -180,6 +183,11 @@ module Daybreak
       @thread.join
     end
 
+    def write_header
+      @out.write(@format.header) if @out.stat.size == 0
+      @out.flush
+    end
+
     def update(lock)
       buf = ''
       begin
@@ -195,11 +203,7 @@ module Daybreak
         end
 
         # Read new journal entries
-        if stat.size > @size
-          @in.pos = @size
-          buf = @in.read(stat.size - @size)
-          @size = stat.size
-        end
+        buf = @in.read(stat.size - @in.pos) if stat.size > @in.pos
       ensure
         @in.flock(File::LOCK_UN) if lock
       end
@@ -220,7 +224,7 @@ module Daybreak
 
     def reset
       @in = File.open(@file, 'rb')
-      @size = 0
+      @format.read_header(@in)
       @table = {}
     end
 
@@ -242,7 +246,7 @@ module Daybreak
             @out.flush
             size = @out.stat.size
           end
-          @size = size if size == @size + record.size
+          @in.pos = size if size == @in.pos + record.size
 
           @flush.signal if @queue.empty?
         end
