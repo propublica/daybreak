@@ -29,7 +29,10 @@ module Daybreak
       sync
     end
 
-
+    # Retrieve a value at key from the database. If the default value was specified
+    # when this database was created, that value will be set and returned. Aliased
+    # as <tt>get</tt>.
+    # @param key the value to retrieve from the database.
     def [](key)
       skey = @serializer.key_for(key)
       if @table.has_key?(skey)
@@ -51,18 +54,33 @@ module Daybreak
     end
     alias_method :set, :'[]='
 
+    # set! flushes data immediately to disk.
+    # @param key the key of the storage slot in the database
+    # @param value the value to store
     def set!(key, value)
       set(key, value)
       @mutex.synchronize { flush }
       value
     end
 
+    # Delete a key from the database
+    # @param key the key of the storage slot in the database
     def delete(key)
       key = @serializer.key_for(key)
       @queue << [key]
       @table.delete(key)
     end
 
+    # delete! immediately deletes the key on disk.
+    # @param key the key of the storage slot in the database
+    def delete!(key)
+      value = delete(key)
+      @mutex.synchronize { flush }
+      value
+    end
+
+    # Does this db have a value for this key?
+    # @param key the key to check if the DB has a key.
     def has_key?(key)
       @table.has_key?(@serializer.key_for(key))
     end
