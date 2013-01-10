@@ -184,8 +184,10 @@ module Daybreak
     end
 
     def write_header
-      @out.write(@format.header) if @out.stat.size == 0
-      @out.flush
+      if @out.stat.size == 0
+        @out.write(@format.header)
+        @out.flush
+      end
     end
 
     def update(lock)
