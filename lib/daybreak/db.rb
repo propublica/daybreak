@@ -178,7 +178,7 @@ module Daybreak
     end
 
     def flush
-      @queue.empty? || @flush.wait(@mutex)
+      @flush.wait(@mutex) unless @queue.empty?
     end
 
     def reset
@@ -195,8 +195,6 @@ module Daybreak
 
     def worker
       loop do
-        @flush.signal if @queue.empty?
-
         record = @queue.pop || break
 
         record = @serializer.serialize(record)
@@ -208,6 +206,8 @@ module Daybreak
             size = @out.stat.size
           end
           @size = size if size == @size + record.size
+
+          @flush.signal if @queue.empty?
         end
       end
     rescue Exception => ex
