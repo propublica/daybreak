@@ -1,8 +1,9 @@
 module Daybreak
-  # Daybreak::DB contains the public api for Daybreak, you may extend it like
-  # any other Ruby class (i.e. to overwrite serialize and parse). It includes
+  # Daybreak::DB contains the public api for Daybreak. It includes
   # Enumerable for functional goodies like map, each, reduce and friends.
   class DB
+    include Enumerable
+
     # Create a new Daybreak::DB. The second argument is the default value
     # to store when accessing a previously unset key, this follows the
     # Hash standard.
@@ -11,53 +12,50 @@ module Daybreak
     #  not yet in the database.
     # @yield [key] a block that will return the default value to store.
     # @yieldparam [String] key the key to be stored.
-    include Enumerable
-
-    def initialize(file, default = nil, &blk)
-      @file = file
+    def initialize(file, default = nil, serializer = Serializer, &block)
+      @file, @serializer = file, serializer.new
+      @default = block ? block : default
       @out = File.open(@file, 'ab')
-      @default = block_given? ? blk : default
       @queue = Queue.new
       @mutex = Mutex.new
       @flush = ConditionVariable.new
       reset
       @thread = Thread.new(&method(:worker))
-      at_exit { finish }
+      at_exit(&method(:finish))
       sync
     end
 
     def [](key)
-      key = key.to_s
-      if @table.has_key? key
-        @table[key]
-      elsif default?
-        set key, Proc === @default ? @default.call(key) : @default
+      skey = @serializer.key_for(key)
+      if @table.has_key?(skey)
+        @table[skey]
+      elsif @default
+        set(key, @default.respond_to?(:call) ? @default.call(key) : @default)
       end
     end
-    alias_method :get, :"[]"
+    alias_method :get, :'[]'
 
     def []=(key, value)
-      key = key.to_s
-      @queue << [key.to_s, serialize(value)]
+      key = @serializer.key_for(key)
+      @queue << [key, value]
       @table[key] = value
     end
-    alias_method :set, :"[]="
+    alias_method :set, :'[]='
 
     def set!(key, value)
-      set key, value
-      sync
-      get key
+      set(key, value)
+      flush
+      value
     end
 
     def delete(key)
-      key = key.to_s
-      @queue << [key, '']
+      key = @serializer.key_for(key)
+      @queue << [key]
       @table.delete(key)
     end
 
     def has_key?(key)
-      key = key.to_s
-      @table.has_key?(key)
+      @table.has_key?(@serializer.key_for(key))
     end
 
     # Does this db have a default value.
@@ -80,7 +78,7 @@ module Daybreak
 
     def sync
       @mutex.synchronize do
-        @flush.wait(@mutex)
+        flush
         update(true)
       end
     end
@@ -88,10 +86,10 @@ module Daybreak
     def lock
       @mutex.synchronize do
         exclusive do
-          @flush.wait(@mutex)
+          flush
           update(false)
           yield
-          @flush.wait(@mutex)
+          flush
         end
       end
     end
@@ -99,6 +97,7 @@ module Daybreak
     def clear
       @mutex.synchronize do
         exclusive do
+          flush
           @out.truncate(0)
           @out.pos = @size = 0
           @table.clear
@@ -137,22 +136,6 @@ module Daybreak
       @out.close
     end
 
-    # Serialize the data for writing to disk, if you don't want to use <tt>Marshal</tt>
-    # overwrite this method.
-    # @param value the value to be serialized
-    # @return [String]
-    def serialize(value)
-      Marshal.dump(value)
-    end
-
-    # Parse the serialized value from disk, like serialize if you want to use a
-    # different serialization method overwrite this method.
-    # @param value the value to be parsed
-    # @return [String]
-    def parse(value)
-      Marshal.load(value)
-    end
-
     private
 
     def finish
@@ -185,13 +168,17 @@ module Daybreak
       end
 
       until buf.empty?
-        key, value, deleted = Record.deserialize(buf)
-        if deleted
-          @table.delete(key)
+        record = @serializer.deserialize(buf)
+        if record.size == 1
+          @table.delete(record.first)
         else
-          @table[key] = parse(value)
+          @table[record.first] = record.last
         end
       end
+    end
+
+    def flush
+      @flush.wait(@mutex)
     end
 
     def reset
@@ -201,9 +188,8 @@ module Daybreak
     end
 
     def dump
-      @table.reduce('') do |dump, rec|
-        key, value = rec
-        dump << Record.serialize([key, serialize(value), false])
+      @table.inject('') do |dump, record|
+        dump << @serializer.serialize(record)
       end
     end
 
@@ -213,7 +199,7 @@ module Daybreak
 
         record = @queue.pop || break
 
-        record = Record.serialize(record)
+        record = @serializer.serialize(record)
         @mutex.synchronize do
           exclusive do
             @out.write(record)
