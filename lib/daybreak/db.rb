@@ -17,6 +17,7 @@ module Daybreak
     def initialize(file, options = {}, &block)
       @file = file
       @serializer = (options[:serializer] || Serializer).new
+      @format = (options[:format] || Format).new(@serializer)
       @default = block ? block : options[:default]
       @out = File.open(@file, 'ab')
       @queue = Queue.new
@@ -166,7 +167,7 @@ module Daybreak
       end
 
       until buf.empty?
-        record = @serializer.deserialize(buf)
+        record = @format.deserialize(buf)
         if record.size == 1
           @table.delete(record.first)
         else
@@ -187,7 +188,7 @@ module Daybreak
 
     def dump
       @table.inject('') do |dump, record|
-        dump << @serializer.serialize(record)
+        dump << @format.serialize(record)
       end
     end
 
@@ -195,7 +196,7 @@ module Daybreak
       loop do
         record = @queue.pop || break
 
-        record = @serializer.serialize(record)
+        record = @format.serialize(record)
         @mutex.synchronize do
           exclusive do
             @out.write(record)
