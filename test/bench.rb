@@ -4,11 +4,11 @@ describe "benchmarks" do
   before do
     @db = Daybreak::DB.new DB_PATH
     1000.times {|i| @db[i] = i }
-    @db.flush!
+    @db.sync
   end
 
   bench_performance_constant "keys with sync" do |n|
-    n.times {|i| @db.set(i, 'i' * i, true) }
+    n.times {|i| @db[i] = 'i'; @db.sync }
   end
 
   bench_performance_constant "inserting keys" do |n|
@@ -20,8 +20,8 @@ describe "benchmarks" do
   end
 
   after do
-    @db.empty!
-    @db.close!
+    @db.clear
+    @db.close
     File.unlink(DB_PATH)
   end
 end

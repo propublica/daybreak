@@ -25,8 +25,9 @@ describe "database functions" do
   end
 
   it "should persist values" do
-    @db.set('1', '4', true)
-    @db.set('4', '1', true)
+    @db['1'] = '4'
+    @db['4'] = '1'
+    @db.sync
 
     assert_equal @db['1'], '4'
     db2 = Daybreak::DB.new DB_PATH
@@ -38,7 +39,8 @@ describe "database functions" do
   it "should compact cleanly" do
     @db[1] = 1
     @db[1] = 1
-    @db.flush!
+    @db.sync
+
     size = File.stat(DB_PATH).size
     @db.compact!
     assert_equal @db[1], 1
@@ -76,7 +78,7 @@ describe "database functions" do
 
   it "can empty the database" do
     20.times {|i| @db[i] = i }
-    @db.empty!
+    @db.clear
     db2 = Daybreak::DB.new DB_PATH
     assert_equal nil, db2['19']
   end
@@ -124,7 +126,7 @@ describe "database functions" do
   end
 
   after do
-    @db.empty!
-    @db.close!
+    @db.clear
+    @db.close
   end
 end

@@ -13,7 +13,7 @@ module Daybreak
     # @yieldparam [String] key the key to be stored.
     include Enumerable
 
-    def initialize(file)
+    def initialize(file, default = nil)
       @file = file
       @out = File.open(@file, 'ab')
       @queue = Queue.new
@@ -21,7 +21,7 @@ module Daybreak
       @flush = ConditionVariable.new
       reset
       @thread = Thread.new(&method(:worker))
-      at_exit { close }
+      at_exit { finish }
       sync
     end
 
@@ -29,12 +29,14 @@ module Daybreak
       key = key.to_s
       @table[key]
     end
+    alias_method :get, :"[]"
 
     def []=(key, value)
       key = key.to_s
       @queue << [key.to_s, serialize(value)]
       @table[key] = value
     end
+    alias_method :set, :"[]="
 
     def delete(key)
       key = key.to_s
@@ -112,12 +114,10 @@ module Daybreak
     end
 
     def close
-      @queue << nil
-      @thread.join
+      finish
       @in.close
       @out.close
     end
-
 
     # Serialize the data for writing to disk, if you don't want to use <tt>Marshal</tt>
     # overwrite this method.
@@ -136,6 +136,11 @@ module Daybreak
     end
 
     private
+
+    def finish
+      @queue << nil
+      @thread.join
+    end
 
     def update(lock)
       buf = ''
@@ -166,7 +171,7 @@ module Daybreak
         if value == nil
           @table.delete(key)
         else
-          @table[key] = value
+          @table[key] = parse(value)
         end
       end
     end
@@ -179,14 +184,15 @@ module Daybreak
 
     def dump
       @table.reduce('') do |dump, key, value|
-        dump << Record.serialize([key, value, false])
+        dump << Record.serialize([key, serialize(value), false])
       end
     end
 
     def worker
       loop do
-        record = @queue.pop
-        @flush.signal and break if @queue.empty? || record.nil?
+        @flush.signal if @queue.empty?
+
+        record = @queue.pop || break
 
         record = Record.serialize(record)
         @mutex.synchronize do
@@ -199,9 +205,6 @@ module Daybreak
           @size = size if size == @size + record.size
         end
       end
-    rescue Exception => ex
-      warn "Database worker: #{ex.message}"
-      retry
     end
 
     def exclusive
