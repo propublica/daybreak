@@ -67,14 +67,14 @@ describe "database functions" do
     assert_equal @db['1'], 5
   end
 
-  # it "should be able to handle another process's call to compact" do
-  #   @db.lock { 20.times {|i| @db[i] = i } }
-  #   db2 = Daybreak::DB.new DB_PATH
-  #   @db.lock { 20.times {|i| @db[i] = i } }
-  #   @db.compact
-  #   db2.sync
-  #   assert_equal 20, db2['19']
-  # end
+  it "should be able to handle another process's call to compact" do
+    @db.lock { 20.times {|i| @db[i] = i } }
+    db2 = Daybreak::DB.new DB_PATH
+    @db.lock { 20.times {|i| @db[i] = i } }
+    @db.compact
+    db2.sync
+    assert_equal 20, db2['19']
+  end
 
   it "can empty the database" do
     20.times {|i| @db[i] = i }
@@ -82,28 +82,6 @@ describe "database functions" do
     db2 = Daybreak::DB.new DB_PATH
     assert_equal nil, db2['19']
   end
-
-  # it "should compact subclassed dbs" do
-  #   class StringDB < Daybreak::DB
-  #     def serialize(it)
-  #       it.to_s
-  #     end
-
-  #     def parse(it)
-  #       it
-  #     end
-  #   end
-
-  #   db = StringDB.new 'string.db'
-  #   db[1] = 'one'
-  #   db[2] = 'two'
-  #   db.delete 2
-  #   db.compact
-  #   assert_equal db[1], 'one'
-  #   assert_equal db[2], nil
-  #   db.clear
-  #   db.close
-  # end
 
   it "should handle deletions" do
     @db[1] = 'one'
