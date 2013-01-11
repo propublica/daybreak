@@ -7,10 +7,35 @@ module Daybreak
       @queue = []
     end
 
-    def <<(x)
-      @mutex.synchronize do
+    if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'ruby'
+      # HACK: Dangerous optimization on MRI which has a
+      # global interpreter lock and makes the @queue array
+      # thread safe.
+
+      def <<(x)
         @queue << x
         @full.signal
+      end
+
+      def pop
+        @queue.shift
+        @empty.signal if @queue.empty?
+      end
+    else
+      # JRuby and Rubinius don't have a GIL
+
+      def <<(x)
+        @mutex.synchronize do
+          @queue << x
+          @full.signal
+        end
+      end
+
+      def pop
+        @mutex.synchronize do
+          @queue.shift
+          @empty.signal if @queue.empty?
+        end
       end
     end
 
@@ -18,13 +43,6 @@ module Daybreak
       @mutex.synchronize do
         @full.wait(@mutex) while @queue.empty?
         @queue.first
-      end
-    end
-
-    def pop
-      @mutex.synchronize do
-        @queue.shift
-        @empty.signal if @queue.empty?
       end
     end
 
