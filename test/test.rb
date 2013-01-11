@@ -104,7 +104,6 @@ describe "database functions" do
   end
 
   after do
-    @db.sync
     @db.clear
     @db.close
   end
