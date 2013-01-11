@@ -36,7 +36,7 @@ module Daybreak
     # @yieldparam [String] key the key to be stored.
     def initialize(file, options = {}, &block)
       @file = file
-      @serializer = (options[:serializer] || Serializer).new
+      @serializer = (options[:serializer] || Serializer::Default).new
       @format = (options[:format] || Format).new(@serializer)
       @default = block ? block : options[:default]
       @queue = []
