@@ -4,7 +4,7 @@ module Daybreak
   class DB
     include Enumerable
 
-    attr_reader :file
+    attr_reader :file, :logsize
     attr_accessor :default
 
     class << self
@@ -241,6 +241,7 @@ module Daybreak
         else
           @table[record.first] = record.last
         end
+        @logsize += 1
       end
     end
 
@@ -254,6 +255,7 @@ module Daybreak
     end
 
     def reset
+      @logsize = 0
       @in = File.open(@file, 'rb')
       @format.read_header(@in)
       @table = {}
@@ -280,6 +282,7 @@ module Daybreak
               size = @out.stat.size
             end
             @in.pos = size if size == @in.pos + record.size
+            @logsize += 1
           end
 
           @queue.shift
