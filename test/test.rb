@@ -67,6 +67,7 @@ describe "database functions" do
     db2.set! '1', 5
     @db.sync
     assert_equal @db['1'], 5
+    db2.close
   end
 
   it "should be able to handle another process's call to compact" do
@@ -76,6 +77,7 @@ describe "database functions" do
     @db.compact
     db2.sync
     assert_equal 19, db2['19']
+    db2.close
   end
 
   it "can empty the database" do
@@ -83,6 +85,7 @@ describe "database functions" do
     @db.clear
     db2 = Daybreak::DB.new DB_PATH
     assert_equal nil, db2['19']
+    db2.close
   end
 
   it "should handle deletions" do
@@ -91,10 +94,11 @@ describe "database functions" do
     @db.delete! 'two'
     assert !@db.has_key?('two')
     assert_equal @db['two'], nil
-    db2 = Daybreak::DB.new DB_PATH
 
+    db2 = Daybreak::DB.new DB_PATH
     assert !db2.has_key?('two')
     assert_equal db2['two'], nil
+    db2.close
   end
 
   it "should close and reopen the file when clearing the database" do
