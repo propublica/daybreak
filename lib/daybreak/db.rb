@@ -30,10 +30,7 @@ module Daybreak
       @serializer = (options[:serializer] || Serializer::Default).new
       @format = (options[:format] || Format).new(@serializer)
       @default = block ? block : options[:default]
-      @queue = []
-      @mutex = Mutex.new
-      @full = ConditionVariable.new
-      @empty = ConditionVariable.new
+      @queue = Queue.new
       @out = File.open(@file, 'ab')
       if @out.stat.size == 0
         @out.write(@format.header)
@@ -69,7 +66,7 @@ module Daybreak
     # @param value the value to store
     def []=(key, value)
       key = @serializer.key_for(key)
-      write([key, value])
+      @queue << [key, value]
       @table[key] = value
     end
     alias_method :set, :'[]='
@@ -79,7 +76,7 @@ module Daybreak
     # @param value the value to store
     def set!(key, value)
       set(key, value)
-      @mutex.synchronize { flush }
+      flush
       value
     end
 
@@ -87,7 +84,7 @@ module Daybreak
     # @param key the key of the storage slot in the database
     def delete(key)
       key = @serializer.key_for(key)
-      write([key])
+      @queue << [key]
       @table.delete(key)
     end
 
@@ -95,7 +92,7 @@ module Daybreak
     # @param key the key of the storage slot in the database
     def delete!(key)
       value = delete(key)
-      @mutex.synchronize { flush }
+      flush
       value
     end
 
@@ -138,78 +135,15 @@ module Daybreak
       @table.keys
     end
 
+    # Flush all changes
+    def flush
+      @queue.flush
+    end
+
     # Sync the database with what is on disk, by first flushing changes, and
     # then reading the file if necessary.
     def sync
-      @mutex.synchronize do
-        flush
-        update
-      end
-    end
-
-    # Lock the database for an exclusive commit accross processes and threads
-    # @yield a block where every change to the database is synced
-    def lock
-      @mutex.synchronize do
-        exclusive do
-          flush
-          update
-          result = yield
-          flush
-          result
-        end
-      end
-    end
-
-    # Remove all keys and values from the database
-    def clear
-      with_tmpfile do |path, file|
-        file.close
-        exclusive do
-          flush
-          # Clear acts like a compactification
-          File.rename(path, @file)
-        end
-        @in.close
-        reset
-      end
-      self
-    end
-
-    # Compact the database to remove stale commits and reduce the file size.
-    def compact
-      with_tmpfile do |path, file|
-        compactsize = file.write(dump)
-        exclusive do
-          newsize = @in.stat.size
-          # Is the new database different?
-          return if newsize == compactsize
-          # Check if database changed in the meantime
-          if newsize > @in.pos
-            # Append changed journal records
-            file.write(@in.read(newsize - @in.pos))
-          end
-          file.close
-          File.rename(path, @file)
-        end
-        update
-      end
-      self
-    end
-
-    # Close the database for reading and writing.
-    def close
-      write(nil)
-      @thread.join
-      @in.close
-      @out.close
-      self.class.databases.delete(self)
-      nil
-    end
-
-    private
-
-    def update
+      flush
       buf = new_records
       until buf.empty?
         record = @format.deserialize(buf)
@@ -221,6 +155,62 @@ module Daybreak
         @logsize += 1
       end
     end
+
+    # Lock the database for an exclusive commit accross processes and threads
+    # @yield a block where every change to the database is synced
+    def lock
+      exclusive do
+        sync
+        result = yield
+        flush
+        result
+      end
+    end
+
+    # Remove all keys and values from the database
+    def clear
+      with_tmpfile do |path, file|
+        file.close
+        flush
+        # Clear acts like a compactification
+        File.rename(path, @file)
+        @in.close
+        reset
+      end
+      self
+    end
+
+    # Compact the database to remove stale commits and reduce the file size.
+    def compact
+      with_tmpfile do |path, file|
+        sync
+        compactsize = file.write(dump)
+        exclusive do
+          stat = @in.stat
+          # Return if database was compactified at the same time
+          # or compactified database has the same size.
+          return self if stat.nlink == 0 || stat.size == compactsize
+          # Append changed journal records if the database changed during compactification
+          file.write(@in.read(stat.size - @in.pos)) if stat.size > @in.pos
+          file.close
+          File.rename(path, @file)
+        end
+        sync
+      end
+      self
+    end
+
+    # Close the database for reading and writing.
+    def close
+      @queue << nil
+      @thread.join
+      @in.close
+      @out.close
+      self.class.databases.delete(self)
+      nil
+    end
+
+    private
 
     def new_records
       stat = nil
@@ -235,22 +225,9 @@ module Daybreak
       end
 
       # Read new journal records
-      if stat.size > @in.pos
-        @in.read(stat.size - @in.pos)
-      else
-        ''
-      end
+      stat.size > @in.pos ? @in.read(stat.size - @in.pos) : ''
     ensure
       @in.flock(File::LOCK_UN) unless @exclusive
-    end
-
-    def flush
-      @empty.wait(@mutex) until @queue.empty?
-    end
-
-    def write(record)
-      @queue << record
-      @full.signal
     end
 
     def reset
@@ -267,15 +244,11 @@ module Daybreak
     end
 
     def worker
-      @mutex.synchronize do
-        loop do
-          @full.wait(@mutex) while @queue.empty?
-          record = @queue.first
-          write_record(record) if record
-          @queue.shift
-          @empty.signal if @queue.empty?
-          break unless record
-        end
+      loop do
+        record = @queue.next
+        write_record(record) if record
+        @queue.pop
+        break unless record
       end
     rescue Exception => ex
       warn "Daybreak worker: #{ex.message}"
@@ -314,7 +287,7 @@ module Daybreak
       path = [@file, $$.to_s(36), Thread.current.object_id.to_s(36)].join
       file = File.open(path, 'wb')
       file.write(@format.header)
-      @mutex.synchronize { yield(path, file) }
+      yield(path, file)
     ensure
       file.close unless file.closed?
       File.unlink(path) if File.exists?(path)
