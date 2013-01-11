@@ -100,6 +100,14 @@ module Daybreak
     def has_key?(key)
       @table.has_key?(@serializer.key_for(key))
     end
+    alias_method :key?, :has_key?
+    alias_method :include?, :has_key?
+    alias_method :member?, :has_key?
+
+    def has_value?(value)
+      @table.has_value?(value)
+    end
+    alias_method :value?, :has_value?
 
     # Return the number of stored items.
     # @return [Integer]
@@ -107,6 +115,10 @@ module Daybreak
       @table.size
     end
     alias_method :length, :size
+
+    def empty?
+      @table.empty?
+    end
 
     # Iterate over the key, value pairs in the database.
     # @yield [key, value] blk the iterator for each key value pair.
