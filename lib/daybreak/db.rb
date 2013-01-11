@@ -5,7 +5,7 @@ module Daybreak
     include Enumerable
 
     attr_reader :file, :logsize
-    attr_accessor :default
+    attr_writer :default
 
     def self.databases
       at_exit do
@@ -45,6 +45,10 @@ module Daybreak
       self.class.databases << self
     end
 
+    def default(key = nil)
+      @default.respond_to?(:call) ? @default.call(key) : @default
+    end
+
     # Retrieve a value at key from the database. If the default value was specified
     # when this database was created, that value will be set and returned. Aliased
     # as <tt>get</tt>.
@@ -54,7 +58,7 @@ module Daybreak
       if @table.has_key?(skey)
         @table[skey]
       elsif @default
-        set(key, @default.respond_to?(:call) ? @default.call(key) : @default)
+        set(key, default(key))
       end
     end
     alias_method :get, :'[]'
