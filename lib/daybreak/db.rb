@@ -19,9 +19,10 @@ module Daybreak
       @serializer = (options[:serializer] || Serializer).new
       @format = (options[:format] || Format).new(@serializer)
       @default = block ? block : options[:default]
-      @queue = Queue.new
+      @queue = []
       @mutex = Mutex.new
-      @flush = ConditionVariable.new
+      @full = ConditionVariable.new
+      @empty = ConditionVariable.new
       @out = File.open(@file, 'ab')
       write_header
       reset
@@ -50,7 +51,7 @@ module Daybreak
     # @param value the value to store
     def []=(key, value)
       key = @serializer.key_for(key)
-      @queue << [key, value]
+      write [key, value]
       @table[key] = value
     end
     alias_method :set, :'[]='
@@ -68,7 +69,7 @@ module Daybreak
     # @param key the key of the storage slot in the database
     def delete(key)
       key = @serializer.key_for(key)
-      @queue << [key]
+      write [key]
       @table.delete(key)
     end
 
@@ -183,7 +184,7 @@ module Daybreak
     private
 
     def finish
-      @queue << nil
+      write nil
       @thread.join
     end
 
@@ -225,7 +226,12 @@ module Daybreak
     end
 
     def flush
-      @flush.wait(@mutex) unless @queue.empty?
+      @empty.wait(@mutex) until @queue.empty?
+    end
+
+    def write(record)
+      @queue << record
+      @full.signal
     end
 
     def reset
@@ -241,20 +247,26 @@ module Daybreak
     end
 
     def worker
-      loop do
-        record = @queue.pop || break
+      @mutex.synchronize do
+        loop do
+          @full.wait(@mutex) while @queue.empty?
 
-        record = @format.serialize(record)
-        @mutex.synchronize do
-          exclusive do
-            @out.write(record)
-            # Flush to make sure the file is really updated
-            @out.flush
-            size = @out.stat.size
+          if record = @queue.first
+            record = @format.serialize(record)
+
+            exclusive do
+              @out.write(record)
+              # Flush to make sure the file is really updated
+              @out.flush
+              size = @out.stat.size
+            end
+            @in.pos = size if size == @in.pos + record.size
           end
-          @in.pos = size if size == @in.pos + record.size
 
-          @flush.signal if @queue.empty?
+          @queue.shift
+          @empty.signal if @queue.empty?
+
+          break unless record
         end
       end
     rescue Exception => ex
