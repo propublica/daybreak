@@ -2,7 +2,7 @@ module Daybreak
   # HACK: Dangerous optimization on MRI which has a
   # global interpreter lock and makes the @queue array
   # thread safe.
-  if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'ruby'
+  if !defined?(RUBY_ENGINE) || RUBY_ENGINE == 'ruby'
     class Queue
       def initialize
         @queue, @full, @empty = [], [], []
