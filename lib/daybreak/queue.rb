@@ -6,6 +6,13 @@ module Daybreak
     class Queue
       def initialize
         @queue, @full, @empty = [], [], []
+        # Wake up threads 10 times per second to avoid deadlocks
+        # since there is a race condition below
+        @heartbeat = Thread.new do
+          @full.each(&:run)
+          @empty.each(&:run)
+          sleep 0.1
+        end
       end
 
       def <<(x)
@@ -25,6 +32,7 @@ module Daybreak
       def next
         while @queue.empty?
           begin
+            # If a push happens here, the thread won't be woken up
             @full << Thread.current
             Thread.stop
           ensure
@@ -37,6 +45,7 @@ module Daybreak
       def flush
         until @queue.empty?
           begin
+            # If a pop happens here, the thread won't be woken up
             @empty << Thread.current
             Thread.stop
           ensure
