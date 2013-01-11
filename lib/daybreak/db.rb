@@ -4,7 +4,27 @@ module Daybreak
   class DB
     include Enumerable
 
+    attr_reader :file
     attr_accessor :default
+
+    class << self
+      def register(db)
+        at_exit(&method(:exit_handler)) unless @db
+        @db = []
+        @db << db
+      end
+
+      def unregister(db)
+        @db.delete(db)
+      end
+
+      def exit_handler
+        @db.each do |db|
+          warn "Database #{db.file} was not closed, state might be inconsistent"
+          db.close
+        end
+      end
+    end
 
     # Create a new Daybreak::DB. The second argument is the default value
     # to store when accessing a previously unset key, this follows the
@@ -27,8 +47,8 @@ module Daybreak
       write_header
       reset
       @thread = Thread.new(&method(:worker))
-      at_exit(&method(:finish))
       sync
+      self.class.register(self)
     end
 
     # Retrieve a value at key from the database. If the default value was specified
@@ -178,6 +198,7 @@ module Daybreak
       finish
       @in.close
       @out.close
+      self.class.unregister(self)
       nil
     end
 
