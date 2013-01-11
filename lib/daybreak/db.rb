@@ -44,7 +44,10 @@ module Daybreak
       @full = ConditionVariable.new
       @empty = ConditionVariable.new
       @out = File.open(@file, 'ab')
-      write_header
+      if @out.stat.size == 0
+        @out.write(@format.header)
+        @out.flush
+      end
       reset
       @thread = Thread.new(&method(:worker))
       sync
@@ -71,7 +74,7 @@ module Daybreak
     # @param value the value to store
     def []=(key, value)
       key = @serializer.key_for(key)
-      write [key, value]
+      write([key, value])
       @table[key] = value
     end
     alias_method :set, :'[]='
@@ -89,7 +92,7 @@ module Daybreak
     # @param key the key of the storage slot in the database
     def delete(key)
       key = @serializer.key_for(key)
-      write [key]
+      write([key])
       @table.delete(key)
     end
 
@@ -155,15 +158,13 @@ module Daybreak
     def clear
       with_tmpfile do |path, file|
         file.close
-        @mutex.synchronize do
-          exclusive do
-            flush
-            # Clear acts like a compactification
-            File.rename(path, @file)
-          end
-          @in.close
-          reset
+        exclusive do
+          flush
+          # Clear acts like a compactification
+          File.rename(path, @file)
         end
+        @in.close
+        reset
       end
       self
     end
@@ -171,22 +172,20 @@ module Daybreak
     # Compact the database to remove stale commits and reduce the file size.
     def compact
       with_tmpfile do |path, file|
-        @mutex.synchronize do
-          compactsize = file.write(dump)
-          exclusive do
-            newsize = @in.stat.size
-            # Is the new database different?
-            return if newsize == compactsize
-            # Check if database changed in the meantime
-            if newsize > @in.pos
-              # Append changed journal entries
-              file.write(@in.read(newsize - @in.pos))
-            end
-            file.close
-            File.rename(path, @file)
+        compactsize = file.write(dump)
+        exclusive do
+          newsize = @in.stat.size
+          # Is the new database different?
+          return if newsize == compactsize
+          # Check if database changed in the meantime
+          if newsize > @in.pos
+            # Append changed journal entries
+            file.write(@in.read(newsize - @in.pos))
           end
-          update(true)
+          file.close
+          File.rename(path, @file)
         end
+        update(true)
       end
       self
     end
@@ -203,15 +202,8 @@ module Daybreak
     private
 
     def finish
-      write nil
+      write(nil)
       @thread.join
-    end
-
-    def write_header
-      if @out.stat.size == 0
-        @out.write(@format.header)
-        @out.flush
-      end
     end
 
     def update(lock)
@@ -314,7 +306,7 @@ module Daybreak
       path = "#{@file}-#{$$}-#{Thread.current.object_id}"
       file = File.open(path, 'wb')
       file.write(@format.header)
-      yield(path, file)
+      @mutex.synchronize { yield(path, file) }
     ensure
       file.close unless file.closed?
       File.unlink(path) if File.exists?(path)
