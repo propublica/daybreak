@@ -170,7 +170,7 @@ module Daybreak
           return if newsize == compactsize
           # Check if database changed in the meantime
           if newsize > @in.pos
-            # Append changed journal entries
+            # Append changed journal records
             file.write(@in.read(newsize - @in.pos))
           end
           file.close
@@ -194,25 +194,7 @@ module Daybreak
     private
 
     def update
-      buf = ''
-      begin
-        stat = nil
-        loop do
-          @in.flock(File::LOCK_SH) unless @exclusive
-          stat = @in.stat
-          # Check if database was compactified in the meantime
-          # break if not
-          break if stat.nlink > 0
-          @in.close
-          reset
-        end
-
-        # Read new journal entries
-        buf = @in.read(stat.size - @in.pos) if stat.size > @in.pos
-      ensure
-        @in.flock(File::LOCK_UN) unless @exclusive
-      end
-
+      buf = new_records
       until buf.empty?
         record = @format.deserialize(buf)
         if record.size == 1
@@ -222,6 +204,28 @@ module Daybreak
         end
         @logsize += 1
       end
+    end
+
+    def new_records
+      stat = nil
+      loop do
+        @in.flock(File::LOCK_SH) unless @exclusive
+        stat = @in.stat
+        # Check if database was compactified in the meantime
+        # break if not
+        break if stat.nlink > 0
+        @in.close
+        reset
+      end
+
+      # Read new journal records
+      if stat.size > @in.pos
+        @in.read(stat.size - @in.pos)
+      else
+        ''
+      end
+    ensure
+      @in.flock(File::LOCK_UN) unless @exclusive
     end
 
     def flush
