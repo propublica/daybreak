@@ -19,9 +19,9 @@ module Daybreak
       end
 
       def exit_handler
-        @db.each do |db|
-          warn "Database #{db.file} was not closed, state might be inconsistent"
-          db.close
+        until @db.empty?
+          warn "Database #{@db.first.file} was not closed, state might be inconsistent"
+          @db.first.close
         end
       end
     end
@@ -192,7 +192,8 @@ module Daybreak
 
     # Close the database for reading and writing.
     def close
-      finish
+      write(nil)
+      @thread.join
       @in.close
       @out.close
       self.class.unregister(self)
@@ -200,11 +201,6 @@ module Daybreak
     end
 
     private
-
-    def finish
-      write(nil)
-      @thread.join
-    end
 
     def update
       buf = ''
