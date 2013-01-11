@@ -52,11 +52,13 @@ describe "database functions" do
     assert_equal default_db[1], 0
     default_db[1] = 1
     assert_equal default_db[1], 1
+    default_db.close
   end
 
   it "should handle default values that are procs" do
     db = Daybreak::DB.new(DB_PATH) {|key| Set.new }
     assert db['foo'].is_a? Set
+    db.close
   end
 
   it "should be able to sync competing writes" do
