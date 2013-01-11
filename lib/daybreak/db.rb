@@ -39,7 +39,7 @@ module Daybreak
       if @table.has_key?(skey)
         @table[skey]
       elsif @default
-        set(key, @default.respond_to?(:call) ? @default.call(key) : @default)
+        set(skey, @default.respond_to?(:call) ? @default.call(key) : @default)
       end
     end
     alias_method :get, :'[]'
