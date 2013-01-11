@@ -292,7 +292,7 @@ module Daybreak
     end
 
     def with_tmpfile
-      path = "#{@file}-#{$$}-#{Thread.current.object_id}"
+      path = [@file, $$.to_s(36), Thread.current.object_id.to_s(36)].join
       file = File.open(path, 'wb')
       file.write(@format.header)
       @mutex.synchronize { yield(path, file) }
