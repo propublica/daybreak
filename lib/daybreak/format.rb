@@ -6,15 +6,14 @@ module Daybreak
 
     def read_header(input)
       raise 'Not a Daybreak database' if input.read(8) != 'DAYBREAK'
-      ver = input.read(2).unpack('n').first
-      len = input.read(2).unpack('n').first
+      ver, len = input.read(4).unpack('nn')
       format = input.read(len)
       raise "Expected format #{self.class.name}, got #{format}" if format != self.class.name
       raise "Wrong version number, expected #{version} got #{ver}" if ver != version
     end
 
     def header
-      @header ||= 'DAYBREAK' << [version].pack('n') << [self.class.name.size].pack('n') << self.class.name
+      @header ||= 'DAYBREAK' << [version, self.class.name.size].pack('nn') << self.class.name
     end
 
     def version
