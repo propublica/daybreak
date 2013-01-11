@@ -254,29 +254,28 @@ module Daybreak
       @mutex.synchronize do
         loop do
           @full.wait(@mutex) while @queue.empty?
-
-          if record = @queue.first
-            record = @format.serialize(record)
-
-            exclusive do
-              @out.write(record)
-              # Flush to make sure the file is really updated
-              @out.flush
-              size = @out.stat.size
-            end
-            @in.pos = size if size == @in.pos + record.size
-            @logsize += 1
-          end
-
+          record = @queue.first
+          write_record(record) if record
           @queue.shift
           @empty.signal if @queue.empty?
-
           break unless record
         end
       end
     rescue Exception => ex
       warn "Daybreak worker: #{ex.message}"
       retry
+    end
+
+    def write_record(record)
+      record = @format.serialize(record)
+      exclusive do
+        @out.write(record)
+        # Flush to make sure the file is really updated
+        @out.flush
+        size = @out.stat.size
+      end
+      @in.pos = size if size == @in.pos + record.size
+      @logsize += 1
     end
 
     def exclusive
