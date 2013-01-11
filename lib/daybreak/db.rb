@@ -136,7 +136,7 @@ module Daybreak
     def sync
       @mutex.synchronize do
         flush
-        update(true)
+        update
       end
     end
 
@@ -146,7 +146,7 @@ module Daybreak
       @mutex.synchronize do
         exclusive do
           flush
-          update(false)
+          update
           result = yield
           flush
           result
@@ -185,7 +185,7 @@ module Daybreak
           file.close
           File.rename(path, @file)
         end
-        update(true)
+        update
       end
       self
     end
@@ -206,12 +206,12 @@ module Daybreak
       @thread.join
     end
 
-    def update(lock)
+    def update
       buf = ''
       begin
         stat = nil
         loop do
-          @in.flock(File::LOCK_SH) if lock
+          @in.flock(File::LOCK_SH) unless @exclusive
           stat = @in.stat
           # Check if database was compactified in the meantime
           # break if not
@@ -223,7 +223,7 @@ module Daybreak
         # Read new journal entries
         buf = @in.read(stat.size - @in.pos) if stat.size > @in.pos
       ensure
-        @in.flock(File::LOCK_UN) if lock
+        @in.flock(File::LOCK_UN) unless @exclusive
       end
 
       until buf.empty?
@@ -297,9 +297,11 @@ module Daybreak
         @out.close
         @out = File.open(@file, 'ab')
       end
+      @exclusive = true
       yield
     ensure
       @out.flock(File::LOCK_UN)
+      @exclusive = false
     end
 
     def with_tmpfile
