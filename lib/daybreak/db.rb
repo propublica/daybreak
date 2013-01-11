@@ -123,8 +123,9 @@ module Daybreak
         exclusive do
           flush
           update(false)
-          yield
+          result = yield
           flush
+          result
         end
       end
     end
@@ -141,6 +142,7 @@ module Daybreak
           @table.clear
         end
       end
+      self
     end
 
     # Compact the database to remove stale commits and reduce the file size.
@@ -164,6 +166,7 @@ module Daybreak
           end
         end
       end
+      self
     ensure
       tmp.close unless tmp.closed?
       File.unlink(tmpfile) if File.exists? tmpfile
@@ -174,6 +177,7 @@ module Daybreak
       finish
       @in.close
       @out.close
+      nil
     end
 
     private
