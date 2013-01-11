@@ -153,14 +153,16 @@ module Daybreak
 
     # Remove all keys and values from the database
     def clear
-      @mutex.synchronize do
-        exclusive do
-          flush
-          @out.truncate(0)
-          @out.pos = @in.pos = 0
-          write_header
-          @format.read_header(@in)
-          @table.clear
+      with_tmpfile do |path, file|
+        file.close
+        @mutex.synchronize do
+          exclusive do
+            flush
+            # Clear acts like a compactification
+            File.rename(path, @file)
+          end
+          @in.close
+          reset
         end
       end
       self
@@ -168,29 +170,25 @@ module Daybreak
 
     # Compact the database to remove stale commits and reduce the file size.
     def compact
-      tmpfile = "#{@file}-#{$$}-#{Thread.current.object_id}"
-      tmp = File.open(tmpfile, 'wb')
-      tmp.write(@format.header)
-      @mutex.synchronize do
-        compactsize = tmp.write(dump)
-        exclusive do
-          newsize = @in.stat.size
-          # Is the new database smaller than the old one?
-          if newsize != compactsize
+      with_tmpfile do |path, file|
+        @mutex.synchronize do
+          compactsize = file.write(dump)
+          exclusive do
+            newsize = @in.stat.size
+            # Is the new database different?
+            return if newsize == compactsize
             # Check if database changed in the meantime
             if newsize > @in.pos
               # Append changed journal entries
-              tmp.write(@in.read(newsize - @in.pos))
+              file.write(@in.read(newsize - @in.pos))
             end
-            tmp.close
-            File.rename(tmpfile, @file)
+            file.close
+            File.rename(path, @file)
           end
+          update(true)
         end
       end
       self
-    ensure
-      tmp.close unless tmp.closed?
-      File.unlink(tmpfile) if File.exists? tmpfile
     end
 
     # Close the database for reading and writing.
@@ -307,6 +305,16 @@ module Daybreak
       yield
     ensure
       @out.flock(File::LOCK_UN)
+    end
+
+    def with_tmpfile
+      path = "#{@file}-#{$$}-#{Thread.current.object_id}"
+      file = File.open(path, 'wb')
+      file.write(@format.header)
+      yield(path, file)
+    ensure
+      file.close unless file.closed?
+      File.unlink(path) if File.exists?(path)
     end
   end
 end
