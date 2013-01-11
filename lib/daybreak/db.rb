@@ -7,23 +7,14 @@ module Daybreak
     attr_reader :file, :logsize
     attr_accessor :default
 
-    class << self
-      def register(db)
-        at_exit(&method(:exit_handler)) unless @db
-        @db = []
-        @db << db
-      end
-
-      def unregister(db)
-        @db.delete(db)
-      end
-
-      def exit_handler
-        until @db.empty?
-          warn "Database #{@db.first.file} was not closed, state might be inconsistent"
-          @db.first.close
+    def self.databases
+      at_exit do
+        until @databases.empty?
+          warn "Database #{@databases.first.file} was not closed, state might be inconsistent"
+          @databases.first.close
         end
-      end
+      end unless @databases
+      @databases ||= []
     end
 
     # Create a new Daybreak::DB. The second argument is the default value
@@ -51,7 +42,7 @@ module Daybreak
       reset
       @thread = Thread.new(&method(:worker))
       sync
-      self.class.register(self)
+      self.class.databases << self
     end
 
     # Retrieve a value at key from the database. If the default value was specified
@@ -196,7 +187,7 @@ module Daybreak
       @thread.join
       @in.close
       @out.close
-      self.class.unregister(self)
+      self.class.databases.delete(self)
       nil
     end
 
