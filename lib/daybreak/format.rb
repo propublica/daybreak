@@ -21,7 +21,6 @@ module Daybreak
     end
 
     def serialize(record)
-      raise 'Key must be a string' unless String === record[0]
       data =
         if record.size == 1
           [record[0].bytesize, DELETE].pack('NN') << record[0]
