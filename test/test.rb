@@ -109,13 +109,31 @@ describe "database functions" do
     end
   end
 
+
   it "should be threadsafe" do
     @db[1] = 0
-    a = Thread.new { 1000.times { @db.lock { @db[1] += 1 } } }
-    b = Thread.new { 1000.times { @db.lock { @db[1] += 1 } } }
-    sleep 0.5
+    inc = Proc.new { 1000.times { @db.lock { @db[1] += 1 } } }
+    a = Thread.new &inc
+    b = Thread.new &inc
     a.join
     b.join
+    assert_equal @db[1], 2000
+  end
+
+  it "should synchonize across processes" do
+    @db[1] = 0
+    @db.sync
+    inc = Proc.new do
+      require File.expand_path(File.dirname(__FILE__)) + '/test_helper.rb'
+      db = Daybreak::DB.new DB_PATH
+      db.lock { 1000.times {  db[1] += 1  } }
+      db.close
+    end
+    a = fork inc
+    b = fork inc
+    Process.wait a
+    Process.wait b
+    @db.sync
     assert_equal @db[1], 2000
   end
 
