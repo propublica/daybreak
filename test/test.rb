@@ -114,7 +114,7 @@ describe Daybreak::DB do
     assert_equal @db[1], 2000
   end
 
-  it 'should synchonize across processes' do
+  it 'should synchronize across processes' do
     @db[1] = 0
     @db.flush
     @db.close
