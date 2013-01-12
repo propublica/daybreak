@@ -38,7 +38,7 @@ module Daybreak
       end
       reset
       @thread = Thread.new(&method(:worker))
-      @mutex = Mutex.new
+      @mutex = Mutex.new # a global mutex for lock
       sync
       self.class.databases << self
     end

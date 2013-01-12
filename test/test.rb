@@ -1,13 +1,5 @@
 require 'set'
 
-# begin
-#   require 'simplecov'
-#   SimpleCov.start
-#   SimpleCov.command_name "Unit tests"
-# rescue Exception => ex
-#   puts "No coverage report generated: #{ex.message}"
-# end
-
 require File.expand_path(File.dirname(__FILE__)) + '/test_helper.rb'
 
 describe "database functions" do
@@ -108,7 +100,6 @@ describe "database functions" do
       flunk
     end
   end
-
 
   it "should be threadsafe" do
     @db[1] = 0
