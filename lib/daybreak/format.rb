@@ -5,19 +5,13 @@ module Daybreak
     end
 
     def read_header(input)
-      raise 'Not a Daybreak database' if input.read(8) != 'DAYBREAK'
-      ver, len = input.read(4).unpack('nn')
-      format = input.read(len)
-      raise "Expected database format #{self.class.name}, got #{format}" if format != self.class.name
-      raise "Expected database version #{version}, got #{ver}" if ver != version
+      raise 'Not a Daybreak database' if input.read(MAGIC.bytesize) != MAGIC
+      ver = input.read(2).unpack('n').first
+      raise "Expected database version #{VERSION}, got #{ver}" if ver != VERSION
     end
 
     def header
-      @header ||= 'DAYBREAK' << [version, self.class.name.size].pack('nn') << self.class.name
-    end
-
-    def version
-      1
+      @header ||= MAGIC + [VERSION].pack('n')
     end
 
     def serialize(record)
@@ -44,6 +38,8 @@ module Daybreak
 
     protected
 
+    MAGIC = 'DAYBREAK'
+    VERSION = 1
     DELETE = (1 << 32) - 1
 
     def crc32(s)
