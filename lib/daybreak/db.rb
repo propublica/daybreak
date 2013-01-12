@@ -272,19 +272,22 @@ module Daybreak
     end
 
     def exclusive
-      loop do
-        @out.flock(File::LOCK_EX)
-        # Check if database was compactified in the meantime
-        # break if not
-        break if @out.stat.nlink > 0
-        @out.close
-        @out = File.open(@file, 'ab')
+      return yield if @exclusive
+      begin
+        loop do
+          @out.flock(File::LOCK_EX)
+          # Check if database was compactified in the meantime
+          # break if not
+          break if @out.stat.nlink > 0
+          @out.close
+          @out = File.open(@file, 'ab')
+        end
+        @exclusive = true
+        yield
+      ensure
+        @out.flock(File::LOCK_UN)
+        @exclusive = false
       end
-      @exclusive = true
-      yield
-    ensure
-      @out.flock(File::LOCK_UN)
-      @exclusive = false
     end
 
     def with_tmpfile
