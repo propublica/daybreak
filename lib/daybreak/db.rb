@@ -38,6 +38,7 @@ module Daybreak
       end
       reset
       @thread = Thread.new(&method(:worker))
+      @mutex = Mutex.new
       sync
       self.class.databases << self
     end
@@ -159,11 +160,13 @@ module Daybreak
     # Lock the database for an exclusive commit accross processes and threads
     # @yield a block where every change to the database is synced
     def lock
-      exclusive do
-        sync
-        result = yield
-        flush
-        result
+      @mutex.synchronize do
+        exclusive do
+          sync
+          result = yield
+          flush
+          result
+        end
       end
     end
 
