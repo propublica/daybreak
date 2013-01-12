@@ -103,7 +103,7 @@ describe "database functions" do
 
   it "should be threadsafe" do
     @db[1] = 0
-    inc = Proc.new { 1000.times { @db.lock { @db[1] += 1 } } }
+    inc = proc { 1000.times { @db.lock { @db[1] += 1 } } }
     a = Thread.new &inc
     b = Thread.new &inc
     a.join
@@ -113,11 +113,11 @@ describe "database functions" do
 
   it "should synchonize across processes" do
     @db[1] = 0
-    @db.sync
+    @db.flush
     @db.close
-    inc = Proc.new do
+    inc = proc do
       db = Daybreak::DB.new DB_PATH
-      1000.times { db.lock { db[1] += 1  } }
+      1000.times { db.lock { db[1] += 1 } }
       db.close
     end
     begin
@@ -129,6 +129,7 @@ describe "database functions" do
       assert_equal @db[1], 2000
     rescue NotImplementedError
       warn "fork is not available: skipping multiprocess test"
+      @db = Daybreak::DB.new DB_PATH
     end
   end
 
