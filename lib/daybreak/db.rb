@@ -176,8 +176,8 @@ module Daybreak
         file.close
         flush
         # Clear acts like a compactification
-        File.rename(path, @file)
         @in.close
+        File.rename(path, @file)
         reset
       end
       self
