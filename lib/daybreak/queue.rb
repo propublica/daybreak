@@ -6,7 +6,7 @@ module Daybreak
     class Queue
       def initialize
         @queue, @full, @empty = [], [], []
-        # Wake up threads 10 times per second to avoid deadlocks
+        # Check threads 10 times per second to avoid deadlocks
         # since there is a race condition below
         @stop = false
         @heartbeat = Thread.new do
