@@ -12,6 +12,7 @@ module Daybreak
         @heartbeat = Thread.new do
           until @stop
             unless @full.empty? || @empty.empty?
+              warn 'Daybreak queue: Deadlock detected'
               @full.each(&:run)
               @empty.each(&:run)
             end
@@ -37,9 +38,11 @@ module Daybreak
       def next
         while @queue.empty?
           begin
-            # If a push happens here, the thread won't be woken up
             @full << Thread.current
-            Thread.stop
+            if @queue.empty?
+              # If a push happens here, the thread won't be woken up
+              Thread.stop
+            end
           ensure
             @full.delete(Thread.current)
           end
@@ -50,9 +53,11 @@ module Daybreak
       def flush
         until @queue.empty?
           begin
-            # If a pop happens here, the thread won't be woken up
             @empty << Thread.current
-            Thread.stop
+            unless @queue.empty?
+              # If a pop happens here, the thread won't be woken up
+              Thread.stop
+            end
           ensure
             @empty.delete(Thread.current)
           end
