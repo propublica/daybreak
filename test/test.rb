@@ -120,12 +120,16 @@ describe "database functions" do
       1000.times { db.lock { db[1] += 1  } }
       db.close
     end
-    a = fork &inc
-    b = fork &inc
-    Process.wait a
-    Process.wait b
-    @db = Daybreak::DB.new DB_PATH
-    assert_equal @db[1], 2000
+    begin
+      a = fork &inc
+      b = fork &inc
+      Process.wait a
+      Process.wait b
+      @db = Daybreak::DB.new DB_PATH
+      assert_equal @db[1], 2000
+    rescue NotImplementedError
+      warn "fork is not available: skipping multiprocess test"
+    end
   end
 
   after do
