@@ -13,8 +13,8 @@ module Daybreak
           until @stop
             unless @full.empty? || @empty.empty?
               warn 'Daybreak queue: Deadlock detected'
-              @full.each(&:run)
-              @empty.each(&:run)
+              @full.each(&:wakeup)
+              @empty.each(&:wakeup)
             end
             sleep 0.1
           end
@@ -24,14 +24,14 @@ module Daybreak
       def <<(x)
         @queue << x
         thread = @full.shift
-        thread.run if thread
+        thread.wakeup if thread
       end
 
       def pop
         @queue.shift
         if @queue.empty?
           thread = @empty.shift
-          thread.run if thread
+          thread.wakeup if thread
         end
       end
 
