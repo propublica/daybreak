@@ -5,16 +5,6 @@ task :default do
   require "./test/test.rb"
 end
 
-desc "Run benchmarks"
-task :bench do
-  require "./test/bench.rb"
-end
-
-desc "Run comparisons with other libraries"
-task :compare do
-  require "./test/compare.rb"
-end
-
 desc "Profile a simple run"
 task :prof do
   require "./test/prof.rb"
