@@ -109,6 +109,16 @@ describe "database functions" do
     end
   end
 
+  if "should be threadsafe" do
+    @db[1] = 0
+    a = Thread.new { 1000.times { @db[1] += 1 } }
+    b = Thread.new { 1000.times { @db[1] += 1 } }
+    sleep 0.5
+    a.join
+    b.join
+    assert_equal @db[1], 2000
+  end
+
   after do
     @db.clear
     @db.close
