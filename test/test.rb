@@ -1,3 +1,6 @@
+require 'minitest/autorun'
+require 'minitest/benchmark'
+
 require 'set'
 
 require File.expand_path(File.dirname(__FILE__)) + '/test_helper.rb'
