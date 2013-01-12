@@ -5,7 +5,7 @@ require 'benchmark'
 
 #inspired by moneta benchmarks
 def single(instance, &blk)
-  data = uniform
+  data = DATA
   samples = []
   data.each do |i|
     samples << Benchmark.measure do
@@ -21,7 +21,7 @@ def single(instance, &blk)
 end
 
 def multi(instance, &blk)
-  data = uniform
+  data = DATA
 
   samples = Benchmark.measure do
     data.each do |i|
@@ -44,6 +44,7 @@ def uniform
     (1..n).map { DICT[rand(DICT.length)] }.join
   end
 end
+DATA = uniform
 
 def run(instance, message = '', &blk)
   puts "Running benchmarks for #{instance.class.name} #{message}"
