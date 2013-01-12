@@ -1,12 +1,12 @@
 require 'set'
 
-begin
-  require 'simplecov'
-  SimpleCov.start
-  SimpleCov.command_name "Unit tests"
-rescue Exception => ex
-  puts "No coverage report generated: #{ex.message}"
-end
+# begin
+#   require 'simplecov'
+#   SimpleCov.start
+#   SimpleCov.command_name "Unit tests"
+# rescue Exception => ex
+#   puts "No coverage report generated: #{ex.message}"
+# end
 
 require File.expand_path(File.dirname(__FILE__)) + '/test_helper.rb'
 
@@ -123,17 +123,17 @@ describe "database functions" do
   it "should synchonize across processes" do
     @db[1] = 0
     @db.sync
+    @db.close
     inc = Proc.new do
-      require File.expand_path(File.dirname(__FILE__)) + '/test_helper.rb'
       db = Daybreak::DB.new DB_PATH
-      db.lock { 1000.times {  db[1] += 1  } }
+      1000.times { db.lock { db[1] += 1  } }
       db.close
     end
-    a = fork inc
-    b = fork inc
+    a = fork &inc
+    b = fork &inc
     Process.wait a
     Process.wait b
-    @db.sync
+    @db = Daybreak::DB.new DB_PATH
     assert_equal @db[1], 2000
   end
 
