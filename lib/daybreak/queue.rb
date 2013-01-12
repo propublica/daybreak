@@ -8,10 +8,15 @@ module Daybreak
         @queue, @full, @empty = [], [], []
         # Wake up threads 10 times per second to avoid deadlocks
         # since there is a race condition below
+        @stop = false
         @heartbeat = Thread.new do
-          @full.each(&:run)
-          @empty.each(&:run)
-          sleep 0.1
+          until @stop
+            unless @full.empty? || @empty.empty?
+              @full.each(&:run)
+              @empty.each(&:run)
+            end
+            sleep 0.1
+          end
         end
       end
 
@@ -53,6 +58,11 @@ module Daybreak
           end
         end
       end
+
+      def stop
+        @stop = true
+        @heartbeat.join
+      end
     end
   else
     class Queue
@@ -88,6 +98,9 @@ module Daybreak
         @mutex.synchronize do
           @empty.wait(@mutex) until @queue.empty?
         end
+      end
+
+      def stop
       end
     end
   end
