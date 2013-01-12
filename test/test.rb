@@ -2,12 +2,12 @@ require 'set'
 
 require File.expand_path(File.dirname(__FILE__)) + '/test_helper.rb'
 
-describe "database functions" do
+describe Daybreak::DB do
   before do
     @db = Daybreak::DB.new DB_PATH
   end
 
-  it "should insert" do
+  it 'should insert' do
     @db[1] = 1
     assert_equal @db[1], 1
     assert @db.has_key?(1)
@@ -16,7 +16,7 @@ describe "database functions" do
     assert_equal @db.length, 1
   end
 
-  it "should persist values" do
+  it 'should persist values' do
     @db['1'] = '4'
     @db['4'] = '1'
     @db.sync
@@ -28,7 +28,7 @@ describe "database functions" do
     db2.close
   end
 
-  it "should compact cleanly" do
+  it 'should compact cleanly' do
     @db[1] = 1
     @db[1] = 1
     @db.sync
@@ -39,7 +39,7 @@ describe "database functions" do
     assert size > File.stat(DB_PATH).size
   end
 
-  it "should allow for default values" do
+  it 'should allow for default values' do
     default_db = Daybreak::DB.new(DB_PATH, :default => 0)
     assert_equal default_db[1], 0
     default_db[1] = 1
@@ -47,13 +47,13 @@ describe "database functions" do
     default_db.close
   end
 
-  it "should handle default values that are procs" do
+  it 'should handle default values that are procs' do
     db = Daybreak::DB.new(DB_PATH) {|key| Set.new }
     assert db['foo'].is_a? Set
     db.close
   end
 
-  it "should be able to sync competing writes" do
+  it 'should be able to sync competing writes' do
     @db.set! '1', 4
     db2 = Daybreak::DB.new DB_PATH
     db2.set! '1', 5
@@ -62,7 +62,7 @@ describe "database functions" do
     db2.close
   end
 
-  it "should be able to handle another process's call to compact" do
+  it 'should be able to handle another process\'s call to compact' do
     @db.lock { 20.times {|i| @db[i] = i } }
     db2 = Daybreak::DB.new DB_PATH
     @db.lock { 20.times {|i| @db[i] = i } }
@@ -72,7 +72,7 @@ describe "database functions" do
     db2.close
   end
 
-  it "can empty the database" do
+  it 'can empty the database' do
     20.times {|i| @db[i] = i }
     @db.clear
     db2 = Daybreak::DB.new DB_PATH
@@ -80,7 +80,7 @@ describe "database functions" do
     db2.close
   end
 
-  it "should handle deletions" do
+  it 'should handle deletions' do
     @db[1] = 'one'
     @db[2] = 'two'
     @db.delete! 'two'
@@ -93,7 +93,7 @@ describe "database functions" do
     db2.close
   end
 
-  it "should close and reopen the file when clearing the database" do
+  it 'should close and reopen the file when clearing the database' do
     begin
       1000.times {@db.clear}
     rescue
@@ -101,7 +101,7 @@ describe "database functions" do
     end
   end
 
-  it "should be threadsafe" do
+  it 'should be threadsafe' do
     @db[1] = 0
     inc = proc { 1000.times { @db.lock { @db[1] += 1 } } }
     a = Thread.new &inc
@@ -111,7 +111,7 @@ describe "database functions" do
     assert_equal @db[1], 2000
   end
 
-  it "should synchonize across processes" do
+  it 'should synchonize across processes' do
     @db[1] = 0
     @db.flush
     @db.close
@@ -128,7 +128,7 @@ describe "database functions" do
       @db = Daybreak::DB.new DB_PATH
       assert_equal @db[1], 2000
     rescue NotImplementedError
-      warn "fork is not available: skipping multiprocess test"
+      warn 'fork is not available: skipping multiprocess test'
       @db = Daybreak::DB.new DB_PATH
     end
   end
