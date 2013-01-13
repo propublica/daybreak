@@ -56,7 +56,9 @@ module Daybreak
       if @table.has_key?(skey)
         @table[skey]
       elsif @default
-        set(key, default(key))
+        value = default(key)
+        @queue << [skey, value]
+        @table[skey] = value
       end
     end
     alias_method :get, :'[]'
@@ -242,9 +244,11 @@ module Daybreak
     end
 
     def dump
-      @table.inject('') do |dump, record|
+      dump = ''
+      @table.each do |record|
         dump << @format.serialize(record)
       end
+      dump
     end
 
     def worker
