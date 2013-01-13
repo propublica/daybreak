@@ -209,7 +209,7 @@ module Daybreak
       @thread.join
       @in.close
       @out.close
-      @queue.stop
+      @queue.stop if @queue.respond_to?(:stop)
       self.class.databases.delete(self)
       nil
     end

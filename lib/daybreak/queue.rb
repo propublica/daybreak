@@ -39,10 +39,8 @@ module Daybreak
         while @queue.empty?
           begin
             @full << Thread.current
-            if @queue.empty?
-              # If a push happens here, the thread won't be woken up
-              Thread.stop
-            end
+            # If a push happens before Thread.stop, the thread won't be woken up
+            Thread.stop if @queue.empty?
           ensure
             @full.delete(Thread.current)
           end
@@ -54,10 +52,8 @@ module Daybreak
         until @queue.empty?
           begin
             @empty << Thread.current
-            unless @queue.empty?
-              # If a pop happens here, the thread won't be woken up
-              Thread.stop
-            end
+            # If a pop happens before Thread.stop, the thread won't be woken up
+            Thread.stop unless @queue.empty?
           ensure
             @empty.delete(Thread.current)
           end
@@ -103,9 +99,6 @@ module Daybreak
         @mutex.synchronize do
           @empty.wait(@mutex) until @queue.empty?
         end
-      end
-
-      def stop
       end
     end
   end
