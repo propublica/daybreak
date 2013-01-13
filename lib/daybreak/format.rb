@@ -11,7 +11,7 @@ module Daybreak
     end
 
     def header
-      @header ||= MAGIC + [VERSION].pack('n')
+      MAGIC + [VERSION].pack('n')
     end
 
     def serialize(record)
