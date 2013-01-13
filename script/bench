@@ -36,7 +36,7 @@ def multi(instance, &blk)
   samples
 end
 
-DICT = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890".freeze
+DICT = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'.freeze
 def uniform
   min, max = 3, 1024
   1000.times.map do
@@ -62,11 +62,11 @@ def report(samples)
     total  = samples.inject(:+)
     mean   = total / samples.length
     stddev = Math.sqrt(samples.inject(0) {|m, s| m += (s - mean) ** 2 } / samples.length)
-    puts "#{samples.length} samples, average time: #{mean.round(4)} ms, std. dev: #{stddev.round(4)} ms"
-    puts "95% < #{samples.slice((samples.length * 0.95).to_i).round(4)} ms"
+    puts '%d samples, average time: %.4f ms, std. dev: %.4f ms' % [samples.length, mean, stddev]
+    puts '95%% < %.4f ms' % samples.slice((samples.length * 0.95).to_i)
   else
-    puts "Total time: #{samples.round(4)} ms"
-    puts "=" * 64
+    puts 'Total time: %.4f ms' % samples
+    puts '=' * 64
   end
 end
 
