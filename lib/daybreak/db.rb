@@ -12,8 +12,12 @@ module Daybreak
     def self.databases
       at_exit do
         until @databases.empty?
-          warn "Database #{@databases.first.file} was not closed, state might be inconsistent"
-          @databases.first.close
+          warn "Daybreak database #{@databases.first.file} was not closed, state might be inconsistent"
+          begin
+            @databases.first.close
+          rescue Exception => ex
+            warn "Failed to close daybreak database: #{ex.message}"
+          end
         end
       end unless @databases
       @databases ||= []
