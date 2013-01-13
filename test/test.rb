@@ -1,21 +1,16 @@
-require 'set'
+require 'minitest/autorun'
+require 'minitest/benchmark'
 
-begin
-  require 'simplecov'
-  SimpleCov.start
-  SimpleCov.command_name "Unit tests"
-rescue Exception => ex
-  puts "No coverage report generated: #{ex.message}"
-end
+require 'set'
 
 require File.expand_path(File.dirname(__FILE__)) + '/test_helper.rb'
 
-describe "database functions" do
+describe Daybreak::DB do
   before do
     @db = Daybreak::DB.new DB_PATH
   end
 
-  it "should insert" do
+  it 'should insert' do
     @db[1] = 1
     assert_equal @db[1], 1
     assert @db.has_key?(1)
@@ -24,98 +19,84 @@ describe "database functions" do
     assert_equal @db.length, 1
   end
 
-  it "should persist values" do
-    @db.set('1', '4', true)
-    @db.set('4', '1', true)
+  it 'should persist values' do
+    @db['1'] = '4'
+    @db['4'] = '1'
+    @db.sync
 
     assert_equal @db['1'], '4'
     db2 = Daybreak::DB.new DB_PATH
     assert_equal db2['1'], '4'
     assert_equal db2['4'], '1'
-    db2.close!
+    db2.close
   end
 
-  it "should compact cleanly" do
+  it 'should compact cleanly' do
     @db[1] = 1
     @db[1] = 1
-    @db.flush!
+    @db.sync
+
     size = File.stat(DB_PATH).size
-    @db.compact!
+    @db.compact
     assert_equal @db[1], 1
     assert size > File.stat(DB_PATH).size
   end
 
-  it "should allow for default values" do
-    default_db = Daybreak::DB.new(DB_PATH, 0)
+  it 'should allow for default values' do
+    default_db = Daybreak::DB.new(DB_PATH, :default => 0)
     assert_equal default_db[1], 0
     default_db[1] = 1
     assert_equal default_db[1], 1
+    default_db.close
   end
 
-  it "should handle default values that are procs" do
+  it 'should handle default values that are procs' do
     db = Daybreak::DB.new(DB_PATH) {|key| Set.new }
     assert db['foo'].is_a? Set
+    db.close
   end
 
-  it "should be able to sync competing writes" do
+  it 'should be able to sync competing writes' do
     @db.set! '1', 4
     db2 = Daybreak::DB.new DB_PATH
     db2.set! '1', 5
-    @db.read!
+    @db.sync
     assert_equal @db['1'], 5
+    db2.close
   end
 
-  it "should be able to handle another process's call to compact" do
-    20.times {|i| @db.set i, i, true }
+  it 'should be able to handle another process\'s call to compact' do
+    @db.lock { 20.times {|i| @db[i] = i } }
     db2 = Daybreak::DB.new DB_PATH
-    20.times {|i| @db.set i, i + 1, true }
-    @db.compact!
-    db2.read!
-    assert_equal 20, db2['19']
+    @db.lock { 20.times {|i| @db[i] = i } }
+    @db.compact
+    db2.sync
+    assert_equal 19, db2['19']
+    db2.close
   end
 
-  it "can empty the database" do
+  it 'can empty the database' do
     20.times {|i| @db[i] = i }
-    @db.empty!
+    @db.clear
     db2 = Daybreak::DB.new DB_PATH
     assert_equal nil, db2['19']
+    db2.close
   end
 
-  it "should compact subclassed dbs" do
-    class StringDB < Daybreak::DB
-      def serialize(it)
-        it.to_s
-      end
-
-      def parse(it)
-        it
-      end
-    end
-
-    db = StringDB.new 'string.db'
-    db[1] = 'one'
-    db[2] = 'two'
-    db.delete 2
-    db.compact!
-    assert_equal db[1], 'one'
-    assert_equal db[2], nil
-    db.empty!
-    db.close!
-  end
-
-  it "should handle deletions" do
+  it 'should handle deletions' do
     @db[1] = 'one'
     @db[2] = 'two'
-    @db.delete 'two'
+    @db.delete! 'two'
     assert !@db.has_key?('two')
     assert_equal @db['two'], nil
 
     db2 = Daybreak::DB.new DB_PATH
     assert !db2.has_key?('two')
     assert_equal db2['two'], nil
+    db2.close
   end
 
-  it "should close and reopen the file when clearing the database" do
+  it 'should close and reopen the file when clearing the database' do
     begin
       1000.times {@db.clear}
     rescue
@@ -123,8 +104,40 @@ describe "database functions" do
     end
   end
 
+  it 'should be threadsafe' do
+    @db[1] = 0
+    inc = proc { 1000.times { @db.lock { @db[1] += 1 } } }
+    a = Thread.new &inc
+    b = Thread.new &inc
+    a.join
+    b.join
+    assert_equal @db[1], 2000
+  end
+
+  it 'should synchronize across processes' do
+    @db[1] = 0
+    @db.flush
+    @db.close
+    inc = proc do
+      db = Daybreak::DB.new DB_PATH
+      1000.times { db.lock { db[1] += 1 } }
+      db.close
+    end
+    begin
+      a = fork &inc
+      b = fork &inc
+      Process.wait a
+      Process.wait b
+      @db = Daybreak::DB.new DB_PATH
+      assert_equal @db[1], 2000
+    rescue NotImplementedError
+      warn 'fork is not available: skipping multiprocess test'
+      @db = Daybreak::DB.new DB_PATH
+    end
+  end
+
   after do
-    @db.empty!
-    @db.close!
+    @db.clear
+    @db.close
   end
 end

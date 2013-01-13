@@ -1,4 +1,5 @@
 *.db
+*.gdbm
 coverage
 doc
 profile

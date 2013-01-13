@@ -2,10 +2,10 @@
 require File.expand_path('../lib/daybreak/version', __FILE__)
 
 Gem::Specification.new do |gem|
-  gem.authors       = ["Jeff Larson"]
-  gem.email         = ["thejefflarson@gmail.com"]
-  gem.description   = %q{A simple dimple key-value store for ruby.}
-  gem.summary       = %q{Daybreak provides an in memory key-value store that is easily enumerable in ruby.}
+  gem.authors       = ["Jeff Larson", "Daniel Mendler"]
+  gem.email         = ["thejefflarson@gmail.com", "mail@daniel-mendler.de"]
+  gem.description   = %q{Incredibly fast pure-ruby key-value store}
+  gem.summary       = %q{Daybreak provides an incredibly fast pure-ruby in memory key-value store, which is multi-process safe and uses a journal log to store the data.}
   gem.homepage      = "http://propublica.github.com/daybreak/"
 
   gem.files         = `git ls-files`.split($\).reject {|f| f =~ /^(index)/}
