@@ -31,6 +31,31 @@ describe Daybreak::DB do
     db2.close
   end
 
+  it 'should persist after clear' do
+    @db['1'] = 'xy'
+    @db.clear
+    @db['1'] = '4'
+    @db['4'] = '1'
+    @db.close
+
+    @db = Daybreak::DB.new DB_PATH
+    assert_equal @db['1'], '4'
+    assert_equal @db['4'], '1'
+  end
+
+  it 'should persist after compact' do
+    @db['1'] = 'xy'
+    @db['1'] = 'z'
+    @db.compact
+    @db['1'] = '4'
+    @db['4'] = '1'
+    @db.close
+
+    @db = Daybreak::DB.new DB_PATH
+    assert_equal @db['1'], '4'
+    assert_equal @db['4'], '1'
+  end
+
   it 'should compact cleanly' do
     @db[1] = 1
     @db[1] = 1
