@@ -9,6 +9,7 @@ module Daybreak
     end
 
     # Read database header from input stream
+    # @param [#read] input the input stream
     def read_header(input)
       raise 'Not a Daybreak database' if input.read(MAGIC.bytesize) != MAGIC
       ver = input.read(2).unpack('n').first
@@ -21,6 +22,8 @@ module Daybreak
     end
 
     # Serialize record and return string
+    # @param [Array] record an array with [key, value] or [key] if the record is
+    # deleted
     def serialize(record)
       data =
         if record.size == 1
@@ -33,6 +36,7 @@ module Daybreak
     end
 
     # Deserialize record from buffer
+    # @param [String] buf the buffer to read from
     def deserialize(buf)
       key_size, value_size = buf[0, 8].unpack('NN')
       data = buf.slice!(0, 8 + key_size + (value_size == DELETE ? 0 : value_size))
