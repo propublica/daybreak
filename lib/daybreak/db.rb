@@ -175,6 +175,7 @@ module Daybreak
     # Remove all keys and values from the database
     def clear
       with_tmpfile do |path, file|
+        file.write(@format.header)
         file.close
         flush
         # Clear acts like a compactification
@@ -244,7 +245,7 @@ module Daybreak
     end
 
     def dump
-      dump = ''
+      dump = @format.header
       @table.each do |record|
         dump << @format.serialize(record)
       end
@@ -297,7 +298,6 @@ module Daybreak
     def with_tmpfile
       path = [@file, $$.to_s(36), Thread.current.object_id.to_s(36)].join
       file = File.open(path, 'wb')
-      file.write(@format.header)
       yield(path, file)
     ensure
       file.close unless file.closed?
