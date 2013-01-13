@@ -4,14 +4,17 @@ module Daybreak
     # keys to strings and marshalls values
     # @api public
     class Default
+      # Return the value of the key to insert into the database
       def key_for(key)
         key.to_s
       end
 
+      # Serialize a value
       def dump(value)
         Marshal.dump(value)
       end
 
+      # Parse a value
       def load(value)
         Marshal.load(value)
       end

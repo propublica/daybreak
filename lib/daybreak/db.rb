@@ -27,8 +27,8 @@ module Daybreak
     # to store when accessing a previously unset key, this follows the
     # Hash standard.
     # @param [String] file the path to the db file
-    # @param default the default value to store and return when a key is
-    #  not yet in the database.
+    # @param [Hash] options a hash that contains the options for creating a new
+    #  database. You can pass in :serializer, :format or :default.
     # @yield [key] a block that will return the default value to store.
     # @yieldparam [String] key the key to be stored.
     def initialize(file, options = {}, &block)
