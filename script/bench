@@ -12,7 +12,7 @@ def single(instance, &blk)
       if blk.nil?
         instance[i] = i
       else
-        blk.call i
+        blk.call(instance, i)
       end
     end.real * 1000
   end
@@ -28,7 +28,7 @@ def multi(instance, &blk)
       if blk.nil?
         instance[i] = i
       else
-        blk.call i
+        blk.call(instance, i)
       end
     end
   end.real * 1000
@@ -52,6 +52,8 @@ def run(instance, message = '', &blk)
   report single(instance, &blk)
   multi instance, &blk
   report multi(instance, &blk)
+ensure
+  instance.close if instance.respond_to? :close
 end
 
 def report(samples)
@@ -68,11 +70,26 @@ def report(samples)
   end
 end
 
+begin
+  require 'dbm'
+  run DBM.new(DB_PATH + '.dbm')
+rescue Exception => ex
+  puts "DBM not benchmarked: #{ex.message}"
+end
+
+begin
+  require 'gdbm'
+  run GDBM.new(DB_PATH + '.gdbm')
+rescue Exception => ex
+  puts "GDBM not benchmarked: #{ex.message}"
+end
+
 run Hash.new
-db = Daybreak::DB.new DB_PATH
-run db
-run db, 'with sync' do |i|
+run Daybreak::DB.new DB_PATH
+run Daybreak::DB.new(DB_PATH), 'with lock' do |db, i|
+  db.lock { db[i] = i }
+end
+run Daybreak::DB.new(DB_PATH), 'with sync' do |db, i|
   db[i] = i
   db.sync
 end
-db.close
