@@ -1,0 +1,95 @@
+#!/usr/bin/env ruby
+
+require File.expand_path(File.dirname(__FILE__)) + '/../test/test_helper.rb'
+require 'benchmark'
+
+#inspired by moneta benchmarks
+def single(instance, &blk)
+  data = DATA
+  samples = []
+  data.each do |i|
+    samples << Benchmark.measure do
+      if blk.nil?
+        instance[i] = i
+      else
+        blk.call(instance, i)
+      end
+    end.real * 1000
+  end
+  instance.clear
+  samples
+end
+
+def multi(instance, &blk)
+  data = DATA
+
+  samples = Benchmark.measure do
+    data.each do |i|
+      if blk.nil?
+        instance[i] = i
+      else
+        blk.call(instance, i)
+      end
+    end
+  end.real * 1000
+  instance.clear
+  samples
+end
+
+DICT = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'.freeze
+def uniform
+  min, max = 3, 1024
+  1000.times.map do
+    n = rand(max - min) + max
+    (1..n).map { DICT[rand(DICT.length)] }.join
+  end
+end
+DATA = uniform
+
+def run(instance, message = '', &blk)
+  puts "Running benchmarks for #{instance.class.name} #{message}"
+  single instance, &blk
+  report single(instance, &blk)
+  multi instance, &blk
+  report multi(instance, &blk)
+ensure
+  instance.close if instance.respond_to? :close
+end
+
+def report(samples)
+  if Array === samples
+    samples.sort!
+    total  = samples.inject(:+)
+    mean   = total / samples.length
+    stddev = Math.sqrt(samples.inject(0) {|m, s| m += (s - mean) ** 2 } / samples.length)
+    puts '%d samples, average time: %.4f ms, std. dev: %.4f ms' % [samples.length, mean, stddev]
+    puts '95%% < %.4f ms' % samples.slice((samples.length * 0.95).to_i)
+  else
+    puts 'Total time: %.4f ms' % samples
+    puts '=' * 64
+  end
+end
+
+begin
+  require 'dbm'
+  run DBM.new(DB_PATH + '.dbm')
+rescue Exception => ex
+  puts "DBM not benchmarked: #{ex.message}"
+end
+
+begin
+  require 'gdbm'
+  run GDBM.new(DB_PATH + '.gdbm')
+rescue Exception => ex
+  puts "GDBM not benchmarked: #{ex.message}"
+end
+
+run Hash.new
+run Daybreak::DB.new DB_PATH
+run Daybreak::DB.new(DB_PATH), 'with lock' do |db, i|
+  db.lock { db[i] = i }
+end
+run Daybreak::DB.new(DB_PATH), 'with sync' do |db, i|
+  db[i] = i
+  db.sync
+end
