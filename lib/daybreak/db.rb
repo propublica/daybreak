@@ -33,12 +33,8 @@ module Daybreak
       @format = (options[:format] || Format).new(@serializer)
       @default = block ? block : options[:default]
       @queue = Queue.new
-      @out = File.open(@file, 'ab')
-      if @out.stat.size == 0
-        @out.write(@format.header)
-        @out.flush
-      end
-      reset
+      @table = {}
+      reopen
       @thread = Thread.new(&method(:worker))
       @mutex = Mutex.new # a global mutex for lock
       sync
@@ -186,8 +182,8 @@ module Daybreak
         flush
         # Clear acts like a compactification
         File.rename(path, @file)
-        @in.close
-        reset
+        @table.clear
+        reopen
       end
       self
     end
@@ -207,6 +203,7 @@ module Daybreak
           file.close
           File.rename(path, @file)
         end
+        reopen
         sync
       end
       self
@@ -234,8 +231,8 @@ module Daybreak
         # Check if database was compactified in the meantime
         # break if not
         break if stat.nlink > 0
-        @in.close
-        reset
+        @table.clear
+        reopen_in
       end
 
       # Read new journal records
@@ -244,12 +241,28 @@ module Daybreak
       @in.flock(File::LOCK_UN) unless @exclusive
     end
 
-    # Reset database reader
-    def reset
+    # Reopen input
+    def reopen_in
       @logsize = 0
+      @in.close if @in
       @in = File.open(@file, 'rb')
       @format.read_header(@in)
-      @table = {}
+    end
+
+    # Reopen output
+    def reopen_out
+      @out.close if @out
+      @out = File.open(@file, 'ab')
+      if @out.stat.size == 0
+        @out.write(@format.header)
+        @out.flush
+      end
+    end
+
+    # Reopen output and input
+    def reopen
+      reopen_out
+      reopen_in
     end
 
     # Return database dump as string
@@ -297,8 +310,7 @@ module Daybreak
           # Check if database was compactified in the meantime
           # break if not
           break if @out.stat.nlink > 0
-          @out.close
-          @out = File.open(@file, 'ab')
+          reopen_out
         end
         @exclusive = true
         yield
