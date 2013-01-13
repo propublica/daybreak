@@ -1,24 +1,15 @@
 module Daybreak
-  # HACK: Dangerous optimization on MRI which has a
-  # global interpreter lock and makes the @queue array
-  # thread safe.
-  if !defined?(RUBY_ENGINE) || RUBY_ENGINE == 'ruby'
-    class Queue
+  # Thread safe job queue
+  # @api private
+  class Queue
+    # HACK: Dangerous optimization on MRI which has a
+    # global interpreter lock and makes the @queue array
+    # thread safe.
+    if !defined?(RUBY_ENGINE) || RUBY_ENGINE == 'ruby'
       def initialize
         @queue, @full, @empty = [], [], []
-        # Check threads 10 times per second to avoid deadlocks
-        # since there is a race condition below
         @stop = false
-        @heartbeat = Thread.new do
-          until @stop
-            unless @full.empty? || @empty.empty?
-              warn 'Daybreak queue: Deadlock detected'
-              @full.each(&:wakeup)
-              @empty.each(&:wakeup)
-            end
-            sleep 0.1
-          end
-        end
+        @heartbeat = Thread.new(&method(:heartbeat))
       end
 
       def <<(x)
@@ -64,9 +55,22 @@ module Daybreak
         @stop = true
         @heartbeat.join
       end
-    end
-  else
-    class Queue
+
+      private
+
+      # Check threads 10 times per second to avoid deadlocks
+      # since there is a race condition below
+      def heartbeat
+        until @stop
+          unless @full.empty? || @empty.empty?
+            warn 'Daybreak queue: Deadlock detected'
+            @full.each(&:wakeup)
+            @empty.each(&:wakeup)
+          end
+          sleep 0.1
+        end
+      end
+    else
       def initialize
         @mutex = Mutex.new
         @full = ConditionVariable.new

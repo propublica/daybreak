@@ -1,12 +1,14 @@
 module Daybreak
   # Daybreak::DB contains the public api for Daybreak. It includes
   # Enumerable for functional goodies like map, each, reduce and friends.
+  # @api public
   class DB
     include Enumerable
 
     attr_reader :file, :logsize
     attr_writer :default
 
+    # @api private
     def self.databases
       at_exit do
         until @databases.empty?
@@ -43,6 +45,8 @@ module Daybreak
       self.class.databases << self
     end
 
+    # Return default value belonging to key
+    # @param key the default value to retrieve.
     def default(key = nil)
       @default.respond_to?(:call) ? @default.call(key) : @default
     end
@@ -120,6 +124,8 @@ module Daybreak
     end
     alias_method :length, :size
 
+    # Return true if database is empty
+    # @return [Boolean]
     def empty?
       @table.empty?
     end
@@ -219,6 +225,7 @@ module Daybreak
 
     private
 
+    # Read new records from journal log and return buffer
     def new_records
       stat = nil
       loop do
@@ -237,6 +244,7 @@ module Daybreak
       @in.flock(File::LOCK_UN) unless @exclusive
     end
 
+    # Reset database reader
     def reset
       @logsize = 0
       @in = File.open(@file, 'rb')
@@ -244,6 +252,7 @@ module Daybreak
       @table = {}
     end
 
+    # Return database dump as string
     def dump
       dump = @format.header
       @table.each do |record|
@@ -252,6 +261,7 @@ module Daybreak
       dump
     end
 
+    # Worker thread
     def worker
       loop do
         record = @queue.next
@@ -264,6 +274,8 @@ module Daybreak
       retry
     end
 
+    # Write record to output stream and
+    # advance input stream
     def write_record(record)
       record = @format.serialize(record)
       exclusive do
@@ -276,6 +288,7 @@ module Daybreak
       @logsize += 1
     end
 
+    # Lock database exclusively
     def exclusive
       return yield if @exclusive
       begin
@@ -295,6 +308,7 @@ module Daybreak
       end
     end
 
+    # Open temporary file and pass it to the block
     def with_tmpfile
       path = [@file, $$.to_s(36), Thread.current.object_id.to_s(36)].join
       file = File.open(path, 'wb')

@@ -1,5 +1,8 @@
 module Daybreak
   module Serializer
+    # Default serializer which converts
+    # keys to strings and marshalls values
+    # @api public
     class Default
       def key_for(key)
         key.to_s
@@ -14,6 +17,8 @@ module Daybreak
       end
     end
 
+    # Serializer which does nothing
+    # @api public
     class None
       def key_for(key)
         key
