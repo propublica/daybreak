@@ -250,7 +250,11 @@ module Daybreak
     # Read new records from journal log and return buffer
     def new_records
       loop do
-        @fd.flock(File::LOCK_SH) unless @exclusive
+        unless @exclusive
+          # HACK: JRuby returns false if the process is already hold by the same process
+          # see https://github.com/jruby/jruby/issues/496
+          Thread.pass until @fd.flock(File::LOCK_SH)
+        end
         # Check if database was compactified in the meantime
         # break if not
         stat = @fd.stat
@@ -332,7 +336,9 @@ module Daybreak
       return yield if @exclusive
       begin
         loop do
-          @fd.flock(File::LOCK_EX)
+          # HACK: JRuby returns false if the process is already hold by the same process
+          # see https://github.com/jruby/jruby/issues/496
+          Thread.pass until @fd.flock(File::LOCK_EX)
           # Check if database was compactified in the meantime
           # break if not
           stat = @fd.stat
