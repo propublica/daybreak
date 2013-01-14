@@ -70,8 +70,9 @@ module Daybreak
     # @param key the value to retrieve from the database.
     def [](key)
       skey = @serializer.key_for(key)
-      if @table.has_key?(skey)
-        @table[skey]
+      value = @table[skey]
+      if value != nil || @table.has_key?(skey)
+        value
       elsif @default
         value = default(key)
         @queue << [skey, value]
