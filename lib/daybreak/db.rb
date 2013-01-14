@@ -313,11 +313,12 @@ module Daybreak
     # Lock database exclusively
     def exclusive
       thread = Thread.current
-      if @exclusive
-        return yield if thread == @exclusive || thread == @worker
-        raise 'You are trying to access Daybreak from multiple threads'
+      if thread == @worker
+        return yield if @exclusive
       else
-        flush if thread != @worker
+        flush
+        return yield if @exclusive == thread
+        raise 'You are trying to access Daybreak from multiple threads' if @exclusive
       end
       begin
         loop do
