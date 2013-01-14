@@ -296,6 +296,7 @@ module Daybreak
     # Return database dump as string
     def dump
       dump = @format.header
+      # each is faster than inject
       @table.each do |record|
         dump << @format.serialize(record)
       end
