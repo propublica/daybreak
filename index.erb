@@ -183,13 +183,12 @@
                     ~^~ ^ ^~^~ ~^~ ~ ~^~~^~^-=~=~=-~^~^~^~
 </pre>
     <p>
-      Daybreak is a simple key value store for ruby. It has user defined persistence,
+      Daybreak is a simple and very fast key value store for ruby. It has user defined persistence,
       and all data is stored in a table in memory, so ruby niceties are available.
-      Daybreak's is faster than <tt>pstore</tt> and more convenient than
-      <tt>dbm</tt>.
+      Daybreak's is faster than <tt>pstore</tt> and <tt>dbm</tt>.
     </p>
     <p>
-      The souce is on <a href="http://github.com/propublica/daybreak">Github</a> and you can install it with:
+      The source is on <a href="http://github.com/propublica/daybreak">Github</a> and you can install it with:
     </p>
 
 <pre>
@@ -225,18 +224,18 @@ $ gem install daybreak
   db.keys.include? '1' # => true
 
   # ensure changes are sent to disk
-  db.flush!
+  db.flush
 
   # open up another db client
-  db2 = Daybreak::DB.new "example.db"
+  db2 = Daybreak::DB.new "example2.db"
   db2['foo'] = 3
 
   # Ruby objects work too
   db2['baz'] = {:one => 1}
-  db2.flush!
+  db2.flush
 
   # Reread the changed file in the first db
-  db.read!
+  db.sync
   p db['foo'] #=> 3
   p db['baz'] #=> {:one => 1}
 
@@ -245,46 +244,37 @@ $ gem install daybreak
   p db.reduce(0) {|m, k, v| m + k.last } # => 499500
 
   # Compaction is always a good idea. It will cut down on the size of the Database
-  db.compact!
+  db.compact
   p db['foo'] #=> 1
-  db2.read!
+  db2.sync
   p db2['foo'] #=> 1
 
-  # DBs can have default values
-  db3 = Daybreak::DB.new "example2.db", 'hello!'
-  db3['bingo'] #=> hello!
-
-  # Not a fan of Marshal? Inherit from Daybreak::DB and rewrite serialize and parse
-  require 'json'
-  class JSONDB < Daybreak::DB
-    def serialize(it)
-      it.to_json
-    end
-
-    def parse(it)
-      JSON.parse(it)
-    end
+  # DBs can accessed from multiple processes at the same
+  # time. You can use #lock to make an operation atomic.
+  db.lock do
+    db['counter'] += 1
   end
 
-  jsondb = JSONDB.new 'json.db'
-  jsondb[1] = {'one' => 1}
-  jsondb.close!
-  jsondb = JSONDB.new 'json.db'
-  jsondb[1]
-  #=> {'one' => 1}
+  # DBs can have default values
+  db3 = Daybreak::DB.new "example3.db", :default => 'hello!'
+  db3['bingo'] #=> hello!
 
+  # If you don't like Marshal as serializer, you can write your own
+  # serializer. Inherit Daybreak::Serializer::Default
+  db4 = Daybreak::DB.new "example4.db", :serializer => MyJsonSerializer
 
   # close the databases
-  jsondb.close!
-  db.close!
-  db2.close!
-  db3.close!
+  db.close
+  db2.close
+  db3.close
+  db4.close
 RUBY
 %>
     </code>
     <p>
-      <tt>Daybreak::DB</tt> can be subclassed if you want a different serialization
-      strategy (for example, JSON). If so override <tt>DB#parse</tt> and <tt>DB#serialize</tt>
+      You can provide your own serializer, see <tt>Daybreak::Serializer::Default</tt> if you want a different serialization
+      strategy (for example, JSON). You can also provide your own formatter, see <tt>Daybreak::Formatter</tt> if
+      you want to format your database log differently.
     </p>
     <h2>Architecture</h2>
 
@@ -294,61 +284,59 @@ RUBY
     </p>
 
     <p>
-      Writes to a Daybreak database are asynchronous and each write is queued until
-      the file is ready for writing, via
-      <a href="http://www.ruby-doc.org/core-1.9.3/IO.html#method-c-select"><tt>IO.select</tt></a>.
-      If you want to commit immediately to the file call <tt>flush!</tt> after a
+      Writes to a Daybreak database are asynchronous and each write is queued.
+      If you want to commit immediately to the file call <tt>flush</tt> after a
       write.
     </p>
 
     <p>
+      Daybreak is multi process safe. Synchronization with the other processes is
+      done by calling <tt>sync</tt> or <tt>lock</tt>. <tt>sync</tt> updates the
+      in memory hash table with new database records from the filesystem.
+      Use <tt>lock</tt> if you want to make operations atomic across process boundaries.
+    </p>
+
+    <p>
       Writes with duplicate keys are simply appended to the end of the file.
-      From time to time you will want to run <tt>compact!</tt> which will remove
+      From time to time you will want to run <tt>compact</tt> which will remove
       old commits from the file and create a smaller logfile. This will shrink the
-      space necessary to store the data on disk.
+      space necessary to store the data on disk. You can even do compactification from
+      a background process.
     </p>
 
     <h2>File Format</h2>
 
     <p>
-      Daybreak stores its data in the simplest file format imaginable. Each
-      Daybreak file is an append only log consisting of alternating key and value cells.
+      Daybreak stores its data in a very simple file format. Each
+      Daybreak file is an append only log consisting of 32 bit big endian key length, 32 bit big endian
+      value length, key data and value data.
       Every key-value pair also has an associated 32 bit CRC field to protect against bad data.
-      Each cell starts with a 32 bit unsigned big-endian integer. The key cell has a deleted
-      flag that is one bit in the most significant digit, and 31 bits representing
-      the cell's length. The data cell is just a 32 bit length.
+      The special value 0xFFFFFFFF for the value length denotes a deleted record.
       Here is how a database of one record might look:
     </p>
 
       <table>
         <tr>
-          <th class="key">Deleted?</th>
-          <th class="key" colspan="2">Key</th>
-          <th class="key" colspan="2">Value</th>
-          <th class="key">CRC</th>
-        </tr>
-        <tr>
-          <td rowspan="2">Deleted Flag (1&nbsp;bit)</td>
-          <td>Encoded Length (31 bits)</td>
-          <td>String&nbsp;Key</td>
-          <td>Encoded&nbsp;Length (32&nbsp;bits)</td>
-          <td>Marshalled Value</td>
-          <td rowspan="2"><small>CRC32(key,&nbsp;value)</small></td>
+          <th class="key">32 bit Key length</th>
+          <th class="key">32 bit Value length</th>
+          <th class="key">Key</th>
+          <th class="key">Value</th>
+          <th class="key">CRC32</th>
         </tr>
         <tr>
           <td>(...)0000101</td>
-          <td>hello</td>
           <td>(...)0001010</td>
+          <td>hello</td>
           <td>&lt;marshalled value&gt;</td>
+	        <td>(...)11010</td>
         </tr>
       </table>
 
     <p>
       These values are all read into an in memory hash table and commits to the
-      database are queued for writing when the OS signals the file is ready.
-      A reminder: pass <tt>true</tt> as the last argument to <tt>set</tt>, or
-      call <tt>flush!</tt> if you want commits to block and be written to
-      the filesystem.
+      database are queued for writing.
+      A reminder: Call <tt>flush</tt> if you want commits to block and be written
+      to the filesystem.
     </p>
 
     <h2>In the Wild</h2>
@@ -363,6 +351,15 @@ RUBY
     <h2>Change Log</h2>
 
     <dl>
+      <dd><b>0.2.0</b></dd>
+      <dt>
+        Pretty much a complete rewrite by <a href="https://github.com/minad">minad</a>
+        to allow for multi-process safety and thread safety.
+        Huge speed improvements and the ability to define custom formats and serializers.<br>
+        <strong>Note:</strong> Old db formats from previous versions will need to be
+          upgraded, use <a href="https://github.com/propublica/daybreak/blob/master/script/converter">
+          the converter</a> to upgrade your old databases.
+      </dt>
       <dd><b>0.1.3</b></dd>
       <dt>Simplify internals, and speed up both reading and writing.</dt>
       <dd><b>0.1.2</b></dd>
