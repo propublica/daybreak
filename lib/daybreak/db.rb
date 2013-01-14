@@ -242,6 +242,10 @@ module Daybreak
       nil
     end
 
+    def closed?
+      @in.closed?
+    end
+
     private
 
     # Read new records from journal log and return buffer
