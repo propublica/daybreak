@@ -5,12 +5,16 @@ module Daybreak
   class DB
     include Enumerable
 
+    # Accessors for the database file, and a counter of how many records are in
+    # sync with the file.
     attr_reader :file, :logsize
     attr_writer :default
 
     @databases = []
     @databases_mutex = Mutex.new
 
+    # A handler that will ensure that databases are closed and synced when the
+    # current process exits.
     at_exit do
       loop do
         db = @databases_mutex.synchronize { @databases.first }
@@ -110,7 +114,7 @@ module Daybreak
       @table.delete(key)
     end
 
-    # delete! immediately deletes the key on disk.
+    # Immediately delete the key on disk.
     # @param key the key of the storage slot in the database
     def delete!(key)
       value = delete(key)
@@ -139,7 +143,7 @@ module Daybreak
     end
     alias_method :length, :size
 
-    # Return true if database is empty
+    # Return true if database is empty.
     # @return [Boolean]
     def empty?
       @table.empty?
@@ -159,7 +163,7 @@ module Daybreak
       @table.keys
     end
 
-    # Flush all changes
+    # Flush all changes to disk.
     def flush
       @queue.flush
     end
@@ -187,7 +191,7 @@ module Daybreak
       end
     end
 
-    # Remove all keys and values from the database
+    # Remove all keys and values from the database.
     def clear
       flush
       with_tmpfile do |path, file|
@@ -234,12 +238,14 @@ module Daybreak
       nil
     end
 
+    # Check to see if we've already closed the database.
     def closed?
       @fd.closed?
     end
 
     private
 
+    # Update the @table with records read from the file, and increment @logsize
     def update
       buf = new_records
       until buf.empty?
