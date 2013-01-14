@@ -39,7 +39,7 @@ module Daybreak
       @queue = Queue.new
       @table = {}
       reopen
-      @thread = Thread.new(&method(:worker))
+      @worker = Thread.new(&method(:worker))
       @mutex = Mutex.new # a global mutex for lock
       sync
       self.class.databases << self
@@ -218,7 +218,7 @@ module Daybreak
     # Close the database for reading and writing.
     def close
       @queue << nil
-      @thread.join
+      @worker.join
       @in.close
       @out.close
       @queue.stop if @queue.respond_to?(:stop)
@@ -312,11 +312,12 @@ module Daybreak
 
     # Lock database exclusively
     def exclusive
-      if Thread.current == @thread
-        return yield if @exclusive
+      thread = Thread.current
+      if @exclusive
+        return yield if thread == @exclusive || thread == @worker
+        raise 'You are trying to access Daybreak from multiple threads'
       else
-        raise 'You are trying to access Daybreak from multiple threads' if @exclusive
-        flush
+        flush if thread != @worker
       end
       begin
         loop do
@@ -327,11 +328,11 @@ module Daybreak
           break if stat.nlink > 0 && stat.ino == @out_ino
           reopen_out
         end
-        @exclusive = true
+        @exclusive = thread
         yield
       ensure
         @out.flock(File::LOCK_UN)
-        @exclusive = false
+        @exclusive = nil
       end
     end
 
