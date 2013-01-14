@@ -233,19 +233,18 @@ module Daybreak
 
     # Read new records from journal log and return buffer
     def new_records
-      stat = nil
       loop do
         @in.flock(File::LOCK_SH) unless @exclusive
-        stat = @in.stat
         # Check if database was compactified in the meantime
         # break if not
+        stat = @in.stat
         break if stat.nlink > 0 && stat.ino == @in_ino
         @table.clear
         reopen_in
       end
 
       # Read new journal records
-      stat.size > @in.pos ? @in.read(stat.size - @in.pos) : ''
+      @in.read
     ensure
       @in.flock(File::LOCK_UN) unless @exclusive
     end
