@@ -169,6 +169,8 @@ module Daybreak
     # @yield a block where every change to the database is synced
     def lock
       @mutex.synchronize do
+        # We need a flush before exclusive
+        # so that @exclusive is not modified by the worker
         flush
         exclusive do
           sync
