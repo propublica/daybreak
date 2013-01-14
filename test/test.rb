@@ -56,6 +56,38 @@ describe Daybreak::DB do
     assert_equal @db['4'], '1'
   end
 
+  it 'should reload database file in sync after compact' do
+    db = Daybreak::DB.new DB_PATH
+
+    @db['1'] = 'xy'
+    @db['1'] = 'z'
+    @db.compact
+    @db['1'] = '4'
+    @db['4'] = '1'
+    @db.flush
+
+    db.sync
+    assert_equal db['1'], '4'
+    assert_equal db['4'], '1'
+    db.close
+  end
+
+  it 'should reload database file in sync after clear' do
+    db = Daybreak::DB.new DB_PATH
+
+    @db['1'] = 'xy'
+    @db['1'] = 'z'
+    @db.clear
+    @db['1'] = '4'
+    @db['4'] = '1'
+    @db.flush
+
+    db.sync
+    assert_equal db['1'], '4'
+    assert_equal db['4'], '1'
+    db.close
+  end
+
   it 'should compact cleanly' do
     @db[1] = 1
     @db[1] = 1
