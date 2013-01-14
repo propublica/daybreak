@@ -8,19 +8,32 @@ module Daybreak
     attr_reader :file, :logsize
     attr_writer :default
 
-    # @api private
-    def self.databases
-      at_exit do
-        until @databases.empty?
-          warn "Daybreak database #{@databases.first.file} was not closed, state might be inconsistent"
-          begin
-            @databases.first.close
-          rescue Exception => ex
-            warn "Failed to close daybreak database: #{ex.message}"
-          end
+    @databases = []
+    @databases_mutex = Mutex.new
+
+    at_exit do
+      loop do
+        db = @databases_mutex.synchronize { @databases.first }
+        break unless db
+        warn "Daybreak database #{db.file} was not closed, state might be inconsistent"
+        begin
+          db.close
+        rescue Exception => ex
+          warn "Failed to close daybreak database: #{ex.message}"
         end
-      end unless @databases
-      @databases ||= []
+      end
+    end
+
+    class << self
+      # @api private
+      def register(db)
+        @databases_mutex.synchronize { @databases << db }
+      end
+
+      # @api private
+      def unregister(db)
+        @databases_mutex.synchronize { @databases.delete(db) }
+      end
     end
 
     # Create a new Daybreak::DB. The second argument is the default value
@@ -42,7 +55,7 @@ module Daybreak
       @worker = Thread.new(&method(:worker))
       @mutex = Mutex.new # a global mutex for lock
       sync
-      self.class.databases << self
+      self.class.register(self)
     end
 
     # Return default value belonging to key
@@ -225,7 +238,7 @@ module Daybreak
       @in.close
       @out.close
       @queue.stop if @queue.respond_to?(:stop)
-      self.class.databases.delete(self)
+      self.class.unregister(self)
       nil
     end
 
