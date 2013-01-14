@@ -169,6 +169,7 @@ module Daybreak
     # @yield a block where every change to the database is synced
     def lock
       @mutex.synchronize do
+        flush
         exclusive do
           sync
           result = yield
@@ -312,14 +313,7 @@ module Daybreak
 
     # Lock database exclusively
     def exclusive
-      thread = Thread.current
-      if thread == @worker
-        return yield if @exclusive
-      else
-        flush
-        return yield if @exclusive == thread
-        raise 'You are trying to access Daybreak from multiple threads' if @exclusive
-      end
+      return yield if @exclusive
       begin
         loop do
           @out.flock(File::LOCK_EX)
@@ -329,11 +323,11 @@ module Daybreak
           break if stat.nlink > 0 && stat.ino == @out_ino
           reopen_out
         end
-        @exclusive = thread
+        @exclusive = true
         yield
       ensure
         @out.flock(File::LOCK_UN)
-        @exclusive = nil
+        @exclusive = false
       end
     end
 
