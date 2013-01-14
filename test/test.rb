@@ -161,7 +161,7 @@ describe Daybreak::DB do
     end
   end
 
-  it 'should be threadsafe' do
+  it 'should have threadsafe lock' do
     @db[1] = 0
     inc = proc { 1000.times { @db.lock { @db[1] += 1 } } }
     a = Thread.new &inc
@@ -175,22 +175,69 @@ describe Daybreak::DB do
     @db[1] = 0
     @db.flush
     @db.close
-    inc = proc do
-      db = Daybreak::DB.new DB_PATH
-      1000.times { db.lock { db[1] += 1 } }
+    begin
+      a = fork do
+        db = Daybreak::DB.new DB_PATH
+        1000.times do |i|
+          db.lock { db[1] += 1 }
+          db["a#{i}"] = i
+          sleep 0.01 if i % 100 == 0
+        end
+        db.close
+      end
+      b = fork do
+        db = Daybreak::DB.new DB_PATH
+        1000.times do |i|
+          db.lock { db[1] += 1 }
+          db["b#{i}"] = i
+          sleep 0.01 if i % 100 == 0
+        end
       db.close
     end
-    begin
-      a = fork &inc
-      b = fork &inc
       Process.wait a
       Process.wait b
       @db = Daybreak::DB.new DB_PATH
+      1000.times do |i|
+        assert_equal @db["a#{i}"], i
+        assert_equal @db["b#{i}"], i
+      end
       assert_equal @db[1], 2000
     rescue NotImplementedError
       warn 'fork is not available: skipping multiprocess test'
       @db = Daybreak::DB.new DB_PATH
     end
+  end
+
+  it 'should synchronize across threads' do
+    @db[1] = 0
+    @db.flush
+    @db.close
+    a = Thread.new do
+      db = Daybreak::DB.new DB_PATH
+      1000.times do |i|
+        db.lock { db[1] += 1 }
+        db["a#{i}"] = i
+        sleep 0.01 if i % 100 == 0
+      end
+      db.close
+    end
+    b = Thread.new do
+      db = Daybreak::DB.new DB_PATH
+      1000.times do |i|
+        db.lock { db[1] += 1 }
+        db["b#{i}"] = i
+        sleep 0.01 if i % 100 == 0
+      end
+      db.close
+    end
+    a.join
+    b.join
+    @db = Daybreak::DB.new DB_PATH
+    1000.times do |i|
+      assert_equal @db["a#{i}"], i
+      assert_equal @db["b#{i}"], i
+    end
+    assert_equal @db[1], 2000
   end
 
   it 'should support background compaction' do
