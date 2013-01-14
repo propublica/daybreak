@@ -169,6 +169,7 @@ module Daybreak
     # @yield a block where every change to the database is synced
     def lock
       @mutex.synchronize do
+        flush
         exclusive do
           sync
           result = yield
