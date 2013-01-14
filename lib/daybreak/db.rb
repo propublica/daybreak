@@ -214,13 +214,13 @@ module Daybreak
       with_tmpfile do |path, file|
         compactsize = file.write(dump)
         exclusive do
-          stat = @in.stat
+          stat = @fd.stat
           # Check if database was compactified at the same time
-          if stat.nlink > 0 && stat.ino == @in_ino
+          if stat.nlink > 0 && stat.ino == @inode
             # Compactified database has the same size -> return
             return self if stat.size == compactsize
             # Append changed journal records if the database changed during compactification
-            file.write(@in.read)
+            file.write(read)
             file.close
             File.rename(path, @file)
           end
@@ -235,15 +235,14 @@ module Daybreak
     def close
       @queue << nil
       @worker.join
-      @in.close
-      @out.close
+      @fd.close
       @queue.stop if @queue.respond_to?(:stop)
       self.class.unregister(self)
       nil
     end
 
     def closed?
-      @in.closed?
+      @fd.closed?
     end
 
     private
@@ -251,46 +250,45 @@ module Daybreak
     # Read new records from journal log and return buffer
     def new_records
       loop do
-        @in.flock(File::LOCK_SH) unless @exclusive
+        @fd.flock(File::LOCK_SH) unless @exclusive
         # Check if database was compactified in the meantime
         # break if not
-        stat = @in.stat
-        break if stat.nlink > 0 && stat.ino == @in_ino
-        @table.clear
-        reopen_in
+        stat = @fd.stat
+        break if stat.nlink > 0 && stat.ino == @inode
+        reopen
+      end
+
+      # File was reopened
+      unless @pos
+        @fd.pos = 0
+        @format.read_header(@fd)
+        @pos = @fd.pos
       end
 
       # Read new journal records
-      @in.read
+      read
     ensure
-      @in.flock(File::LOCK_UN) unless @exclusive
+      @fd.flock(File::LOCK_UN) unless @exclusive
     end
 
-    # Reopen input
-    def reopen_in
-      @logsize = 0
-      @in.close if @in
-      @in = File.open(@file, 'rb')
-      @in_ino = @in.stat.ino
-      @format.read_header(@in)
-    end
-
-    # Reopen output
-    def reopen_out
-      @out.close if @out
-      @out = File.open(@file, 'ab')
-      stat = @out.stat
-      @out_ino = stat.ino
-      if stat.size == 0
-        @out.write(@format.header)
-        @out.flush
-      end
-    end
-
-    # Reopen output and input
     def reopen
-      reopen_out
-      reopen_in
+      @fd.close if @fd
+      @fd = File.open(@file, 'ab+')
+      stat = @fd.stat
+      @inode = stat.ino
+      @logsize = 0
+      if stat.size == 0
+        @fd.write(@format.header)
+        @fd.flush
+      end
+      @pos = nil
+    end
+
+    def read
+      @fd.pos = @pos
+      buf = @fd.read
+      @pos = @fd.pos
+      buf
     end
 
     # Return database dump as string
@@ -321,12 +319,11 @@ module Daybreak
     def write_record(record)
       record = @format.serialize(record)
       exclusive do
-        @out.write(record)
+        @fd.write(record)
         # Flush to make sure the file is really updated
-        @out.flush
-        size = @out.stat.size
+        @fd.flush
       end
-      @in.pos = size if size == @in.pos + record.bytesize
+      @pos = @fd.pos if @pos && @fd.pos == @pos + record.bytesize
       @logsize += 1
     end
 
@@ -335,17 +332,17 @@ module Daybreak
       return yield if @exclusive
       begin
         loop do
-          @out.flock(File::LOCK_EX)
+          @fd.flock(File::LOCK_EX)
           # Check if database was compactified in the meantime
           # break if not
-          stat = @out.stat
-          break if stat.nlink > 0 && stat.ino == @out_ino
-          reopen_out
+          stat = @fd.stat
+          break if stat.nlink > 0 && stat.ino == @inode
+          reopen
         end
         @exclusive = true
         yield
       ensure
-        @out.flock(File::LOCK_UN)
+        @fd.flock(File::LOCK_UN)
         @exclusive = false
       end
     end
