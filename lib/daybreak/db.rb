@@ -180,36 +180,38 @@ module Daybreak
 
     # Remove all keys and values from the database
     def clear
+      flush
       with_tmpfile do |path, file|
         file.write(@format.header)
         file.close
-        flush
         # Clear acts like a compactification
         File.rename(path, @file)
-        @table.clear
-        reopen
       end
+      @table.clear
+      reopen
       self
     end
 
     # Compact the database to remove stale commits and reduce the file size.
     def compact
+      sync
       with_tmpfile do |path, file|
-        sync
         compactsize = file.write(dump)
         exclusive do
           stat = @in.stat
-          # Return if database was compactified at the same time
-          # or compactified database has the same size.
-          return self if stat.nlink == 0 || stat.ino != @in_ino || stat.size == compactsize
-          # Append changed journal records if the database changed during compactification
-          file.write(@in.read(stat.size - @in.pos)) if stat.size > @in.pos
-          file.close
-          File.rename(path, @file)
+          # Check if database was compactified at the same time
+          if stat.nlink > 0 && stat.ino == @in_ino
+            # Compactified database has the same size -> return
+            return self if stat.size == compactsize
+            # Append changed journal records if the database changed during compactification
+            file.write(@in.read(stat.size - @in.pos)) if stat.size > @in.pos
+            file.close
+            File.rename(path, @file)
+          end
         end
-        reopen
-        sync
       end
+      reopen
+      sync
       self
     end
 
