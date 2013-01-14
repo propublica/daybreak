@@ -207,7 +207,7 @@ module Daybreak
             # Compactified database has the same size -> return
             return self if stat.size == compactsize
             # Append changed journal records if the database changed during compactification
-            file.write(@in.read(stat.size - @in.pos)) if stat.size > @in.pos
+            file.write(@in.read)
             file.close
             File.rename(path, @file)
           end
