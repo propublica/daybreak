@@ -286,6 +286,20 @@ describe Daybreak::DB do
     assert_equal @db[1], 2000
   end
 
+  it 'should support compact in lock' do
+    @db[1] = 2
+    @db.lock do
+      @db.compact
+    end
+  end
+
+  it 'should support clear in lock' do
+    @db[1] = 2
+    @db.lock do
+      @db.clear
+    end
+  end
+
   after do
     @db.clear
     @db.close
