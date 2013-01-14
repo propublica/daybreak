@@ -175,20 +175,23 @@
                     ~^~ ^ ^~^~ ~^~ ~ ~^~~^~^-=~=~=-~^~^~^~
 </pre>
     <p>
-      Daybreak is a simple key value store for ruby. It has user defined persistence,
+      <p style="text-align: right">
+	<a href="http://rubygems.org/gems/daybreak"><img src="https://badge.fury.io/rb/daybreak.png"/></a>
+	<a href="http://travis-ci.org/propublica/daybreak"><img src="https://secure.travis-ci.org/propublica/daybreak.png?branch=master"/></a>
+      </p>
+      Daybreak is a simple and very fast key value store for ruby. It has user defined persistence,
       and all data is stored in a table in memory, so ruby niceties are available.
-      Daybreak's is faster than <tt>pstore</tt> and more convenient than
-      <tt>dbm</tt>.
+      Daybreak's is faster than <tt>pstore</tt> and <tt>dbm</tt>.
     </p>
     <p>
-      The souce is on <a href="http://github.com/propublica/daybreak">Github</a> and you can install it with:
+      The source is on <a href="http://github.com/propublica/daybreak">Github</a> and you can install it with:
     </p>
 
 <pre>
 $ gem install daybreak
 </pre>
 
-    <p>(v0.1.0) | <a href="http://rdoc.info/github/propublica/daybreak/master/frames">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
+    <p>(v0.1.3) | <a href="http://rdoc.info/github/propublica/daybreak/master/frames">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
 
     <h2>Overview</h2>
 
@@ -216,18 +219,18 @@ $ gem install daybreak
   <span class="n">db</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">include?</span> <span class="s1">&#39;1&#39;</span> <span class="c1"># =&gt; true</span>
 
   <span class="c1"># ensure changes are sent to disk</span>
-  <span class="n">db</span><span class="o">.</span><span class="n">flush!</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">flush</span>
 
   <span class="c1"># open up another db client</span>
-  <span class="n">db2</span> <span class="o">=</span> <span class="no">Daybreak</span><span class="o">::</span><span class="no">DB</span><span class="o">.</span><span class="n">new</span> <span class="s2">&quot;example.db&quot;</span>
+  <span class="n">db2</span> <span class="o">=</span> <span class="no">Daybreak</span><span class="o">::</span><span class="no">DB</span><span class="o">.</span><span class="n">new</span> <span class="s2">&quot;example2.db&quot;</span>
   <span class="n">db2</span><span class="o">[</span><span class="s1">&#39;foo&#39;</span><span class="o">]</span> <span class="o">=</span> <span class="mi">3</span>
 
   <span class="c1"># Ruby objects work too</span>
   <span class="n">db2</span><span class="o">[</span><span class="s1">&#39;baz&#39;</span><span class="o">]</span> <span class="o">=</span> <span class="p">{</span><span class="ss">:one</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">}</span>
-  <span class="n">db2</span><span class="o">.</span><span class="n">flush!</span>
+  <span class="n">db2</span><span class="o">.</span><span class="n">flush</span>
 
   <span class="c1"># Reread the changed file in the first db</span>
-  <span class="n">db</span><span class="o">.</span><span class="n">read!</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">sync</span>
   <span class="nb">p</span> <span class="n">db</span><span class="o">[</span><span class="s1">&#39;foo&#39;</span><span class="o">]</span> <span class="c1">#=&gt; 3</span>
   <span class="nb">p</span> <span class="n">db</span><span class="o">[</span><span class="s1">&#39;baz&#39;</span><span class="o">]</span> <span class="c1">#=&gt; {:one =&gt; 1}</span>
 
@@ -236,46 +239,37 @@ $ gem install daybreak
   <span class="nb">p</span> <span class="n">db</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span><span class="o">|</span><span class="n">m</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">|</span> <span class="n">m</span> <span class="o">+</span> <span class="n">k</span><span class="o">.</span><span class="n">last</span> <span class="p">}</span> <span class="c1"># =&gt; 499500</span>
 
   <span class="c1"># Compaction is always a good idea. It will cut down on the size of the Database</span>
-  <span class="n">db</span><span class="o">.</span><span class="n">compact!</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">compact</span>
   <span class="nb">p</span> <span class="n">db</span><span class="o">[</span><span class="s1">&#39;foo&#39;</span><span class="o">]</span> <span class="c1">#=&gt; 1</span>
-  <span class="n">db2</span><span class="o">.</span><span class="n">read!</span>
+  <span class="n">db2</span><span class="o">.</span><span class="n">sync</span>
   <span class="nb">p</span> <span class="n">db2</span><span class="o">[</span><span class="s1">&#39;foo&#39;</span><span class="o">]</span> <span class="c1">#=&gt; 1</span>
 
-  <span class="c1"># DBs can have default values</span>
-  <span class="n">db3</span> <span class="o">=</span> <span class="no">Daybreak</span><span class="o">::</span><span class="no">DB</span><span class="o">.</span><span class="n">new</span> <span class="s2">&quot;example2.db&quot;</span><span class="p">,</span> <span class="s1">&#39;hello!&#39;</span>
-  <span class="n">db3</span><span class="o">[</span><span class="s1">&#39;bingo&#39;</span><span class="o">]</span> <span class="c1">#=&gt; hello!</span>
-
-  <span class="c1"># Not a fan of Marshal? Inherit from Daybreak::DB and rewrite serialize and parse</span>
-  <span class="nb">require</span> <span class="s1">&#39;json&#39;</span>
-  <span class="k">class</span> <span class="nc">JSONDB</span> <span class="o">&lt;</span> <span class="no">Daybreak</span><span class="o">::</span><span class="no">DB</span>
-    <span class="k">def</span> <span class="nf">serialize</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
-      <span class="n">it</span><span class="o">.</span><span class="n">to_json</span>
-    <span class="k">end</span>
-
-    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
-      <span class="no">JSON</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
-    <span class="k">end</span>
+  <span class="c1"># DBs can accessed from multiple processes at the same</span>
+  <span class="c1"># time. You can use #lock to make an operation atomic.</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">lock</span> <span class="k">do</span>
+    <span class="n">db</span><span class="o">[</span><span class="s1">&#39;counter&#39;</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
   <span class="k">end</span>
 
-  <span class="n">jsondb</span> <span class="o">=</span> <span class="no">JSONDB</span><span class="o">.</span><span class="n">new</span> <span class="s1">&#39;json.db&#39;</span>
-  <span class="n">jsondb</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;one&#39;</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">}</span>
-  <span class="n">jsondb</span><span class="o">.</span><span class="n">close!</span>
-  <span class="n">jsondb</span> <span class="o">=</span> <span class="no">JSONDB</span><span class="o">.</span><span class="n">new</span> <span class="s1">&#39;json.db&#39;</span>
-  <span class="n">jsondb</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
-  <span class="c1">#=&gt; {&#39;one&#39; =&gt; 1}</span>
+  <span class="c1"># DBs can have default values</span>
+  <span class="n">db3</span> <span class="o">=</span> <span class="no">Daybreak</span><span class="o">::</span><span class="no">DB</span><span class="o">.</span><span class="n">new</span> <span class="s2">&quot;example3.db&quot;</span><span class="p">,</span> <span class="ss">:default</span> <span class="o">=&gt;</span> <span class="s1">&#39;hello!&#39;</span>
+  <span class="n">db3</span><span class="o">[</span><span class="s1">&#39;bingo&#39;</span><span class="o">]</span> <span class="c1">#=&gt; hello!</span>
 
+  <span class="c1"># If you don&#39;t like Marshal as serializer, you can write your own</span>
+  <span class="c1"># serializer. Inherit Daybreak::Serializer::Default</span>
+  <span class="n">db4</span> <span class="o">=</span> <span class="no">Daybreak</span><span class="o">::</span><span class="no">DB</span><span class="o">.</span><span class="n">new</span> <span class="s2">&quot;example4.db&quot;</span><span class="p">,</span> <span class="ss">:serializer</span> <span class="o">=&gt;</span> <span class="no">MyJsonSerializer</span>
 
   <span class="c1"># close the databases</span>
-  <span class="n">jsondb</span><span class="o">.</span><span class="n">close!</span>
-  <span class="n">db</span><span class="o">.</span><span class="n">close!</span>
-  <span class="n">db2</span><span class="o">.</span><span class="n">close!</span>
-  <span class="n">db3</span><span class="o">.</span><span class="n">close!</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">close</span>
+  <span class="n">db2</span><span class="o">.</span><span class="n">close</span>
+  <span class="n">db3</span><span class="o">.</span><span class="n">close</span>
+  <span class="n">db4</span><span class="o">.</span><span class="n">close</span>
 </pre></div>
 
     </code>
     <p>
-      <tt>Daybreak::DB</tt> can be subclassed if you want a different serialization
-      strategy (for example, JSON). If so override <tt>DB#parse</tt> and <tt>DB#serialize</tt>
+      You can provide your own serializer, see <tt>Daybreak::Serializer::Default</tt> if you want a different serialization
+      strategy (for example, JSON). You can also provide your own formatter, see <tt>Daybreak::Formatter</tt> if
+      you want to format your database log differently.
     </p>
     <h2>Architecture</h2>
 
@@ -285,61 +279,58 @@ $ gem install daybreak
     </p>
 
     <p>
-      Writes to a Daybreak database are asynchronous and each write is queued until
-      the file is ready for writing, via
-      <a href="http://www.ruby-doc.org/core-1.9.3/IO.html#method-c-select"><tt>IO.select</tt></a>.
-      If you want to commit immediately to the file call <tt>flush!</tt> after a
+      Writes to a Daybreak database are asynchronous and each write is queued.
+      If you want to commit immediately to the file call <tt>flush</tt> after a
       write.
     </p>
 
     <p>
+      Daybreak is multi process safe. Synchronization with the other processes is
+      done by calling <tt>sync</tt> or <tt>lock</tt>. <tt>sync</tt> updates the
+      in memory hash table with new database records from the filesystem.
+      Use <tt>lock</tt> if you want to make operations atomic across process boundaries.
+    </p>
+
+    <p>
       Writes with duplicate keys are simply appended to the end of the file.
-      From time to time you will want to run <tt>compact!</tt> which will remove
+      From time to time you will want to run <tt>compact</tt> which will remove
       old commits from the file and create a smaller logfile. This will shrink the
-      space necessary to store the data on disk.
+      space necessary to store the data on disk. You can even do compactification from
+      a background process.
     </p>
 
     <h2>File Format</h2>
 
     <p>
-      Daybreak stores its data in the simplest file format imaginable. Each
-      Daybreak file is an append only log consisting of alternating key and value cells.
+      Daybreak stores its data in a very simple file format. Each
+      Daybreak file is an append only log consisting of 32 bit big endian key length, 32 bit big endian
+      value length, key data and value data.
       Every key-value pair also has an associated 32 bit CRC field to protect against bad data.
-      Each cell starts with a 32 bit unsigned big-endian integer. The key cell has a deleted
-      flag that is one bit in the most significant digit, and 31 bits representing
-      the cell's length. The data cell is just a 32 bit length.
+      The special value 0xFFFFFFFF for the value length denotes a deleted record.
       Here is how a database of one record might look:
     </p>
 
       <table>
         <tr>
-          <th class="key">Deleted?</th>
-          <th class="key" colspan="2">Key</th>
-          <th class="key" colspan="2">Value</th>
-          <th class="key">CRC</th>
-        </tr>
-        <tr>
-          <td rowspan="2">Deleted Flag (1&nbsp;bit)</td>
-          <td>Encoded Length (31 bits)</td>
-          <td>String&nbsp;Key</td>
-          <td>Encoded&nbsp;Length (32&nbsp;bits)</td>
-          <td>Marshalled Value</td>
-          <td rowspan="2"><small>CRC32(key,&nbsp;value)</small></td>
+          <th class="key">32 bit Key length</th>
+          <th class="key">32 bit Value length</th>
+          <th class="key">Key</th>
+          <th class="key">Value</th>
+          <th class="key">CRC32</th>
         </tr>
         <tr>
           <td>(...)0000101</td>
-          <td>hello</td>
           <td>(...)0001010</td>
+          <td>hello</td>
           <td>&lt;marshalled value&gt;</td>
+	        <td>(...)11010</td>
         </tr>
       </table>
 
     <p>
       These values are all read into an in memory hash table and commits to the
-      database are queued for writing when the OS signals the file is ready.
-      A reminder: pass <tt>true</tt> as the last argument to <tt>set</tt>, or
-      call <tt>flush!</tt> if you want commits to block and be written to
-      the filesystem.
+      database are queued for writing.
+      A reminder: Call <tt>flush</tt> if you want commits to block and be written to the filesystem.
     </p>
 
     <h2>In the Wild</h2>
@@ -351,9 +342,31 @@ $ gem install daybreak
       </li>
     </ul>
 
+    <h2>Testing &amp; Benchmarks</h2>
+
+    <p>
+      Daybreak is tested using <a href="https://travis-ci.org/propublica/daybreak">Travis-CI</a>. We
+      also run benchmarks there, which compare Daybreak against DBM, GDBM and Hash.
+    </p>
+
     <h2>Change Log</h2>
 
     <dl>
+      <dd><b>0.2.0</b></dd>
+      <dt>
+        Pretty much a complete rewrite by <a href="https://github.com/minad">minad</a>
+        to allow for multi-process safety and thread safety.
+        Huge speed improvements and the ability to define custom formats and serializers.<br>
+        <strong>Note:</strong> Old db formats from previous versions will need to be
+          upgraded, use <a href="https://github.com/propublica/daybreak/blob/master/script/converter">
+          the converter</a> to upgrade your old databases.
+      </dt>
+      <dd><b>0.1.3</b></dd>
+      <dt>Simplify internals, and speed up both reading and writing.</dt>
+      <dd><b>0.1.2</b></dd>
+      <dt>Fix <tt>compact!</tt> segfault or deadlock on 1.8.7-p371, and huge cleanup and speedup thanks to <a href="https://github.com/minad">minad</a>!</dt>
+      <dd><b>0.1.1</b></dd>
+      <dt>Fix file handling and possible segfault on some systems when using <tt>clear</tt></dt>
       <dd><b>0.1.0</b></dd>
       <dt>Make Daybreak compatible with <a href="https://github.com/minad/moneta">moneta</a>, and add a delete operation. This represents a slight change to the log file format. (thanks <a href="https://github.com/minad">minad</a>)</dt>
       <dd><b>0.0.4</b></dd>

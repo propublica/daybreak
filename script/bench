@@ -1,0 +1,95 @@
+#!/usr/bin/env ruby
+
+require File.expand_path(File.dirname(__FILE__)) + '/../test/test_helper.rb'
+require 'benchmark'
+
+RUNS = 20
+
+def measure(instance, &block)
+  samples = []
+  $errors = 0
+  RUNS.times do
+    if block
+      samples << Benchmark.measure(&block).real * 1000
+    else
+      samples << Benchmark.measure do
+        DATA.each do |i|
+          instance[i] = i
+        end
+        DATA.each do |i|
+          $errors += 1 unless instance[i] == i
+        end
+      end.real * 1000
+    end
+  end
+  puts "#{$errors} ERRORS" if $errors > 0
+  instance.clear
+  samples
+end
+
+DICT = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'.freeze
+def uniform
+  min, max = 3, 1024
+  1000.times.map do
+    n = rand(max - min) + max
+    (1..n).map { DICT[rand(DICT.length)] }.join
+  end
+end
+DATA = uniform
+
+def run(instance, message = '', &blk)
+  puts "Running benchmarks for #{instance.class.name} #{message}"
+  measure instance, &blk
+  report measure(instance, &blk)
+  puts '=' * 64
+ensure
+  instance.close if instance.respond_to? :close
+end
+
+def report(samples)
+  samples.sort!
+  total  = samples.inject(:+)
+  mean   = total / samples.length
+  stddev = Math.sqrt(samples.inject(0) {|m, s| m += (s - mean) ** 2 } / samples.length)
+  puts '%d samples, average time: %.4f ms, std. dev: %.4f ms' % [samples.length, mean, stddev]
+  puts '95%% < %.4f ms' % samples.slice((samples.length * 0.95).to_i)
+end
+
+begin
+  require 'dbm'
+  run DBM.new(DB_PATH + '.dbm')
+rescue Exception => ex
+  puts "DBM not benchmarked: #{ex.message}"
+end
+
+begin
+  require 'gdbm'
+  run GDBM.new(DB_PATH + '.gdbm')
+rescue Exception => ex
+  puts "GDBM not benchmarked: #{ex.message}"
+end
+
+run Hash.new
+run Daybreak::DB.new DB_PATH
+
+db = Daybreak::DB.new DB_PATH
+run db, 'with lock' do
+  DATA.each do |i|
+    db.lock { db[i] = i }
+  end
+  DATA.each do |i|
+    db.lock { $errors += 1 unless db[i] == i }
+  end
+end
+
+db = Daybreak::DB.new DB_PATH
+run db, 'with sync' do
+  DATA.each do |i|
+    db[i] = i
+    db.sync
+  end
+  DATA.each do |i|
+    $errors += 1 unless db[i] == i
+    db.sync
+  end
+end
