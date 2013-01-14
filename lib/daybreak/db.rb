@@ -326,7 +326,7 @@ module Daybreak
         @out.flush
         size = @out.stat.size
       end
-      @in.pos = size if size == @in.pos + record.size
+      @in.pos = size if size == @in.pos + record.bytesize
       @logsize += 1
     end
 
