@@ -4,10 +4,6 @@ module Daybreak
   # your own database format!
   # @api public
   class Format
-    def initialize(serializer)
-      @serializer = serializer
-    end
-
     # Read database header from input stream
     # @param [#read] input the input stream
     def read_header(input)
@@ -24,28 +20,23 @@ module Daybreak
     # Serialize record and return string
     # @param [Array] record an array with [key, value] or [key] if the record is
     # deleted
-    def serialize(record)
+    def dump(record)
       data =
         if record.size == 1
           [record[0].bytesize, DELETE].pack('NN') << record[0]
         else
-          value = @serializer.dump(record[1])
-          [record[0].bytesize, value.bytesize].pack('NN') << record[0] << value
+          [record[0].bytesize, record[1].bytesize].pack('NN') << record[0] << record[1]
         end
       data << crc32(data)
     end
 
     # Deserialize record from buffer
     # @param [String] buf the buffer to read from
-    def deserialize(buf)
+    def parse(buf)
       key_size, value_size = buf[0, 8].unpack('NN')
       data = buf.slice!(0, 8 + key_size + (value_size == DELETE ? 0 : value_size))
       raise 'CRC mismatch' unless buf.slice!(0, 4) == crc32(data)
-      if value_size == DELETE
-        [data[8, key_size]]
-      else
-        [data[8, key_size], @serializer.load(data[8 + key_size, value_size])]
-      end
+      value_size == DELETE ? [data[8, key_size]] : [data[8, key_size], data[8 + key_size, value_size]]
     end
 
     protected

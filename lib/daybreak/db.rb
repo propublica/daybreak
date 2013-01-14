@@ -47,7 +47,7 @@ module Daybreak
     def initialize(file, options = {}, &block)
       @file = file
       @serializer = (options[:serializer] || Serializer::Default).new
-      @format = (options[:format] || Format).new(@serializer)
+      @format = (options[:format] || Format).new
       @default = block ? block : options[:default]
       @queue = Queue.new
       @table = {}
@@ -243,11 +243,11 @@ module Daybreak
     def update
       buf = new_records
       until buf.empty?
-        record = @format.deserialize(buf)
+        record = @format.parse(buf)
         if record.size == 1
           @table.delete(record.first)
         else
-          @table[record.first] = record.last
+          @table[record.first] = @serializer.load(record.last)
         end
         @logsize += 1
       end
@@ -306,7 +306,8 @@ module Daybreak
       dump = @format.header
       # each is faster than inject
       @table.each do |record|
-        dump << @format.serialize(record)
+        record[1] = @serializer.dump(record.last)
+        dump << @format.dump(record)
       end
       dump
     end
@@ -327,7 +328,8 @@ module Daybreak
     # Write record to output stream and
     # advance input stream
     def write_record(record)
-      record = @format.serialize(record)
+      record[1] = @serializer.dump(record.last) if record.size > 1
+      record = @format.dump(record)
       exclusive do
         @fd.write(record)
         # Flush to make sure the file is really updated
