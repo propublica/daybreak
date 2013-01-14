@@ -3,7 +3,7 @@
 require File.expand_path(File.dirname(__FILE__)) + '/../test/test_helper.rb'
 require 'benchmark'
 
-RUNS = 10
+RUNS = 20
 
 def measure(instance, &block)
   samples = []
