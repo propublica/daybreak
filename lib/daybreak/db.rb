@@ -201,7 +201,7 @@ module Daybreak
           stat = @in.stat
           # Return if database was compactified at the same time
           # or compactified database has the same size.
-          return self if stat.nlink == 0 || stat.size == compactsize
+          return self if stat.nlink == 0 || stat.ino != @in_ino || stat.size == compactsize
           # Append changed journal records if the database changed during compactification
           file.write(@in.read(stat.size - @in.pos)) if stat.size > @in.pos
           file.close
@@ -234,7 +234,7 @@ module Daybreak
         stat = @in.stat
         # Check if database was compactified in the meantime
         # break if not
-        break if stat.nlink > 0
+        break if stat.nlink > 0 && stat.ino == @in_ino
         @table.clear
         reopen_in
       end
@@ -250,6 +250,7 @@ module Daybreak
       @logsize = 0
       @in.close if @in
       @in = File.open(@file, 'rb')
+      @in_ino = @in.stat.ino
       @format.read_header(@in)
     end
 
@@ -257,7 +258,9 @@ module Daybreak
     def reopen_out
       @out.close if @out
       @out = File.open(@file, 'ab')
-      if @out.stat.size == 0
+      stat = @out.stat
+      @out_ino = stat.ino
+      if stat.size == 0
         @out.write(@format.header)
         @out.flush
       end
@@ -313,7 +316,8 @@ module Daybreak
           @out.flock(File::LOCK_EX)
           # Check if database was compactified in the meantime
           # break if not
-          break if @out.stat.nlink > 0
+          stat = @out.stat
+          break if stat.nlink > 0 && stat.ino == @out_ino
           reopen_out
         end
         @exclusive = true
