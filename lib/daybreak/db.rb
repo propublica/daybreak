@@ -51,10 +51,10 @@ module Daybreak
       @default = block ? block : options[:default]
       @queue = Queue.new
       @table = {}
-      reopen
+      open
+      @mutex = Mutex.new # Mutex to make #lock thread safe
       @worker = Thread.new(&method(:worker))
-      @mutex = Mutex.new # a global mutex for lock
-      sync
+      update
       self.class.register(self)
     end
 
@@ -166,16 +166,7 @@ module Daybreak
     # then reading the file if necessary.
     def sync
       flush
-      buf = new_records
-      until buf.empty?
-        record = @format.deserialize(buf)
-        if record.size == 1
-          @table.delete(record.first)
-        else
-          @table[record.first] = record.last
-        end
-        @logsize += 1
-      end
+      update
     end
 
     # Lock the database for an exclusive commit accross processes and threads
@@ -186,7 +177,7 @@ module Daybreak
         # so that @exclusive is not modified by the worker
         flush
         exclusive do
-          sync
+          update
           result = yield
           flush
           result
@@ -204,7 +195,7 @@ module Daybreak
         File.rename(path, @file)
       end
       @table.clear
-      reopen
+      open
       self
     end
 
@@ -226,8 +217,8 @@ module Daybreak
           end
         end
       end
-      reopen
-      sync
+      open
+      update
       self
     end
 
@@ -247,6 +238,19 @@ module Daybreak
 
     private
 
+    def update
+      buf = new_records
+      until buf.empty?
+        record = @format.deserialize(buf)
+        if record.size == 1
+          @table.delete(record.first)
+        else
+          @table[record.first] = record.last
+        end
+        @logsize += 1
+      end
+    end
+
     # Read new records from journal log and return buffer
     def new_records
       loop do
@@ -259,7 +263,7 @@ module Daybreak
         # break if not
         stat = @fd.stat
         break if stat.nlink > 0 && stat.ino == @inode
-        reopen
+        open
       end
 
       # Read new journal records
@@ -268,7 +272,7 @@ module Daybreak
       @fd.flock(File::LOCK_UN) unless @exclusive
     end
 
-    def reopen
+    def open
       @fd.close if @fd
       @fd = File.open(@file, 'ab+')
       stat = @fd.stat
@@ -282,7 +286,7 @@ module Daybreak
     end
 
     def read
-      # File was reopened
+      # File was opened
       unless @pos
         @fd.pos = 0
         @format.read_header(@fd)
@@ -342,7 +346,7 @@ module Daybreak
           # break if not
           stat = @fd.stat
           break if stat.nlink > 0 && stat.ino == @inode
-          reopen
+          open
         end
         @exclusive = true
         yield
