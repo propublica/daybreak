@@ -262,13 +262,6 @@ module Daybreak
         reopen
       end
 
-      # File was reopened
-      unless @pos
-        @fd.pos = 0
-        @format.read_header(@fd)
-        @pos = @fd.pos
-      end
-
       # Read new journal records
       read
     ensure
@@ -289,7 +282,13 @@ module Daybreak
     end
 
     def read
-      @fd.pos = @pos
+      # File was reopened
+      unless @pos
+        @fd.pos = 0
+        @format.read_header(@fd)
+      else
+        @fd.pos = @pos
+      end
       buf = @fd.read
       @pos = @fd.pos
       buf
