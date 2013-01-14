@@ -289,6 +289,7 @@ describe Daybreak::DB do
   it 'should support compact in lock' do
     @db[1] = 2
     @db.lock do
+      @db[1] = 2
       @db.compact
     end
   end
@@ -296,7 +297,23 @@ describe Daybreak::DB do
   it 'should support clear in lock' do
     @db[1] = 2
     @db.lock do
+      @db[1] = 2
       @db.clear
+    end
+  end
+
+  it 'should support flush in lock' do
+    @db[1] = 2
+    @db.lock do
+      @db[1] = 2
+      @db.flush
+    end
+  end
+
+  it 'should support set! in lock' do
+    @db[1] = 2
+    @db.lock do
+      @db.set!(1, 2)
     end
   end
 
