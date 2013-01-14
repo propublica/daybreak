@@ -54,6 +54,7 @@ module Daybreak
       open
       @mutex = Mutex.new # Mutex to make #lock thread safe
       @worker = Thread.new(&method(:worker))
+      @worker.priority = -1
       update
       self.class.register(self)
     end

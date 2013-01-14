@@ -10,6 +10,7 @@ module Daybreak
         @queue, @full, @empty = [], [], []
         @stop = false
         @heartbeat = Thread.new(&method(:heartbeat))
+        @heartbeat.priority = -9
       end
 
       def <<(x)
