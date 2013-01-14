@@ -193,6 +193,52 @@ describe Daybreak::DB do
     end
   end
 
+  it 'should support background compaction' do
+    @db[1] = 0
+    @db.flush
+    @db.close
+    stop = false
+    a = Thread.new do
+      db = Daybreak::DB.new DB_PATH
+      1000.times do |i|
+        db.lock { db[1] += 1 }
+        db["a#{i}"] = i
+        sleep 0.01 if i % 100 == 0
+      end
+      db.close
+    end
+    b = Thread.new do
+      db = Daybreak::DB.new DB_PATH
+      1000.times do |i|
+        db.lock { db[1] += 1 }
+        db["b#{i}"] = i
+        sleep 0.01 if i % 100 == 0
+      end
+      db.close
+    end
+    c = Thread.new do
+      db = Daybreak::DB.new DB_PATH
+      db.compact until stop
+      db.close
+    end
+    d = Thread.new do
+      db = Daybreak::DB.new DB_PATH
+      db.compact until stop
+      db.close
+    end
+    stop = true
+    a.join
+    b.join
+    c.join
+    d.join
+    @db = Daybreak::DB.new DB_PATH
+    1000.times do |i|
+      assert_equal @db["a#{i}"], i
+      assert_equal @db["b#{i}"], i
+    end
+    assert_equal @db[1], 2000
+  end
+
   after do
     @db.clear
     @db.close
