@@ -15,14 +15,14 @@ module Daybreak
 
       def <<(x)
         @queue << x
-        thread = @full.shift
+        thread = @full.first
         thread.wakeup if thread
       end
 
       def pop
         @queue.shift
         if @queue.empty?
-          thread = @empty.shift
+          thread = @empty.first
           thread.wakeup if thread
         end
       end
@@ -32,7 +32,7 @@ module Daybreak
           begin
             @full << Thread.current
             # If a push happens before Thread.stop, the thread won't be woken up
-            Thread.stop if @queue.empty?
+            Thread.stop while @queue.empty?
           ensure
             @full.delete(Thread.current)
           end
@@ -45,7 +45,7 @@ module Daybreak
           begin
             @empty << Thread.current
             # If a pop happens before Thread.stop, the thread won't be woken up
-            Thread.stop unless @queue.empty?
+            Thread.stop until @queue.empty?
           ensure
             @empty.delete(Thread.current)
           end
@@ -63,11 +63,8 @@ module Daybreak
       # since there is a race condition below
       def heartbeat
         until @stop
-          unless @full.empty? || @empty.empty?
-            warn 'Daybreak queue: Deadlock detected'
-            @full.each(&:wakeup)
-            @empty.each(&:wakeup)
-          end
+          @empty.each(&:wakeup)
+          @full.each(&:wakeup)
           sleep 0.1
         end
       end
