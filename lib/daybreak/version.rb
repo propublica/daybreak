@@ -1,5 +1,5 @@
 module Daybreak
   # Version string updated using SemVer
   # @api public
-  VERSION = '0.1.3'
+  VERSION = '0.2.0'
 end
