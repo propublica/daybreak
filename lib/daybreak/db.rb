@@ -227,18 +227,15 @@ module Daybreak
     def compact
       sync
       with_tmpfile do |path, file|
-        compactsize = file.write(dump)
+        # Compactified database has the same size -> return
+        return self if @pos == file.write(dump)
         exclusive do
-          stat = @fd.stat
-          # Check if database was compactified at the same time
-          if stat.nlink > 0 && stat.ino == @inode
-            # Compactified database has the same size -> return
-            return self if stat.size == compactsize
-            # Append changed journal records if the database changed during compactification
-            file.write(read)
-            file.close
-            File.rename(path, @file)
-          end
+          # Database was compactified in the meantime
+          return self if @pos == nil
+          # Append changed journal records if the database changed during compactification
+          file.write(read)
+          file.close
+          File.rename(path, @file)
         end
       end
       open
@@ -280,17 +277,15 @@ module Daybreak
     # Read new records from journal log and return buffer
     def new_records
       loop do
-        unless @exclusive
-          # HACK: JRuby returns false if the process is already hold by the same process
-          # see https://github.com/jruby/jruby/issues/496
-          Thread.pass until @fd.flock(File::LOCK_SH)
-        end
+        # HACK: JRuby returns false if the process is already hold by the same process
+        # see https://github.com/jruby/jruby/issues/496
+        Thread.pass until @fd.flock(File::LOCK_SH)
         # Check if database was compactified in the meantime
         # break if not
         stat = @fd.stat
         break if stat.nlink > 0 && stat.ino == @inode
         open
-      end
+      end unless @exclusive
 
       # Read new journal records
       read
