@@ -5,10 +5,11 @@ module Daybreak
   class DB
     include Enumerable
 
-    # Accessors for the database file, and a counter of how many records are in
-    # sync with the file.
-    attr_reader :file, :logsize
-    attr_writer :default
+    # Database file name
+    attr_reader :file
+
+    # Counter of how many records are in
+    attr_reader :logsize
 
     @databases = []
     @databases_mutex = Mutex.new
@@ -52,9 +53,13 @@ module Daybreak
       @file = file
       @serializer = (options[:serializer] || Serializer::Default).new
       @format = (options[:format] || Format).new
-      @default = block ? block : options[:default]
       @queue = Queue.new
       @table = {}
+      if block
+        self.default = block
+      elsif options.include?(:default)
+        self.default = options[:default]
+      end
       open
       @mutex = Mutex.new # Mutex to make #lock thread safe
       @worker = Thread.new(&method(:worker))
@@ -66,7 +71,25 @@ module Daybreak
     # Return default value belonging to key
     # @param key the default value to retrieve.
     def default(key = nil)
-      @default.respond_to?(:call) ? @default.call(key) : @default
+      @table.default(key)
+    end
+
+    # Set default value
+    # @param value the default value, can be a callable
+    def default=(value = nil)
+      @table.default_proc =
+        if value.respond_to?(:call)
+          proc do |hash, key|
+            v = value.call(key)
+            @queue << [key, v]
+            hash[key] = v
+          end
+        else
+          proc do |hash, key|
+            @queue << [key, value]
+            hash[key] = value
+          end
+        end
     end
 
     # Retrieve a value at key from the database. If the default value was specified
@@ -74,15 +97,7 @@ module Daybreak
     # as <tt>get</tt>.
     # @param key the value to retrieve from the database.
     def [](key)
-      skey = @serializer.key_for(key)
-      value = @table[skey]
-      if value != nil || @table.has_key?(skey)
-        value
-      elsif @default
-        value = default(key)
-        @queue << [skey, value]
-        @table[skey] = value
-      end
+      @table[@serializer.key_for(key)]
     end
     alias_method :get, :'[]'
 
