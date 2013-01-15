@@ -19,24 +19,40 @@ describe Daybreak::DB do
     assert_equal @db.length, 1
   end
 
+  it 'should support batch inserts' do
+    @db.update(1 => :a, 2 => :b)
+    assert_equal @db[1], :a
+    assert_equal @db[2], :b
+    assert_equal @db.length, 2
+  end
+
   it 'should persist values' do
     @db['1'] = '4'
     @db['4'] = '1'
-    @db.sync
+    assert_equal @db.sync, @db
 
     assert_equal @db['1'], '4'
     db2 = Daybreak::DB.new DB_PATH
     assert_equal db2['1'], '4'
     assert_equal db2['4'], '1'
-    db2.close
+    assert_equal db2.close, nil
+  end
+
+  it 'should persist after batch update' do
+    @db.update!(1 => :a, 2 => :b)
+
+    db2 = Daybreak::DB.new DB_PATH
+    assert_equal db2[1], :a
+    assert_equal db2[2], :b
+    assert_equal db2.close, nil
   end
 
   it 'should persist after clear' do
     @db['1'] = 'xy'
-    @db.clear
+    assert_equal @db.clear, @db
     @db['1'] = '4'
     @db['4'] = '1'
-    @db.close
+    assert_equal @db.close, nil
 
     @db = Daybreak::DB.new DB_PATH
     assert_equal @db['1'], '4'
@@ -46,10 +62,10 @@ describe Daybreak::DB do
   it 'should persist after compact' do
     @db['1'] = 'xy'
     @db['1'] = 'z'
-    @db.compact
+    assert_equal @db.compact, @db
     @db['1'] = '4'
     @db['4'] = '1'
-    @db.close
+    assert_equal @db.close, nil
 
     @db = Daybreak::DB.new DB_PATH
     assert_equal @db['1'], '4'
@@ -61,10 +77,10 @@ describe Daybreak::DB do
 
     @db['1'] = 'xy'
     @db['1'] = 'z'
-    @db.compact
+    assert_equal @db.compact, @db
     @db['1'] = '4'
     @db['4'] = '1'
-    @db.flush
+    assert_equal @db.flush, @db
 
     db.sync
     assert_equal db['1'], '4'

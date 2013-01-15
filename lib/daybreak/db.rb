@@ -59,7 +59,7 @@ module Daybreak
       @mutex = Mutex.new # Mutex to make #lock thread safe
       @worker = Thread.new(&method(:worker))
       @worker.priority = -1
-      update
+      load
       self.class.register(self)
     end
 
@@ -122,6 +122,23 @@ module Daybreak
       value
     end
 
+    # Update database with hash (Fast batch update)
+    def update(hash)
+      shash = {}
+      hash.each do |key, value|
+        shash[@serializer.key_for(key)] = value
+      end
+      @queue << shash
+      @table.update(shash)
+      self
+    end
+
+    # Updata database and flush data to disk.
+    def update!(hash)
+      update(hash)
+      flush
+    end
+
     # Does this db have a value for this key?
     # @param key the key to check if the DB has a key.
     def has_key?(key)
@@ -166,24 +183,26 @@ module Daybreak
     # Flush all changes to disk.
     def flush
       @queue.flush
+      self
     end
 
     # Sync the database with what is on disk, by first flushing changes, and
     # then reading the file if necessary.
     def sync
       flush
-      update
+      load
     end
 
     # Lock the database for an exclusive commit accross processes and threads
     # @yield a block where every change to the database is synced
     def lock
       @mutex.synchronize do
-        # We need a flush before exclusive
-        # so that @exclusive is not modified by the worker
+        # Flush everything to start with a clean state
+        # and to protect the @locked variable
         flush
-        exclusive do
-          update
+
+        with_flock(File::LOCK_EX) do
+          load
           result = yield
           flush
           result
@@ -209,13 +228,11 @@ module Daybreak
     def compact
       sync
       with_tmpfile do |path, file|
-        compactsize = file.write(dump)
-        exclusive do
-          stat = @fd.stat
-          # Check if database was compactified at the same time
-          if stat.nlink > 0 && stat.ino == @inode
-            # Compactified database has the same size -> return
-            return self if stat.size == compactsize
+        # Compactified database has the same size -> return
+        return self if @pos == file.write(dump)
+        with_flock(File::LOCK_EX) do
+          # Database was compactified in the meantime
+          if @pos != nil
             # Append changed journal records if the database changed during compactification
             file.write(read)
             file.close
@@ -224,8 +241,7 @@ module Daybreak
         end
       end
       open
-      update
-      self
+      load
     end
 
     # Close the database for reading and writing.
@@ -245,9 +261,9 @@ module Daybreak
 
     private
 
-    # Update the @table with records read from the file, and increment @logsize
-    def update
-      buf = new_records
+    # Update the @table with records
+    def load
+      buf = read
       until buf.empty?
         record = @format.parse(buf)
         if record.size == 1
@@ -257,29 +273,10 @@ module Daybreak
         end
         @logsize += 1
       end
+      self
     end
 
-    # Read new records from journal log and return buffer
-    def new_records
-      loop do
-        unless @exclusive
-          # HACK: JRuby returns false if the process is already hold by the same process
-          # see https://github.com/jruby/jruby/issues/496
-          Thread.pass until @fd.flock(File::LOCK_SH)
-        end
-        # Check if database was compactified in the meantime
-        # break if not
-        stat = @fd.stat
-        break if stat.nlink > 0 && stat.ino == @inode
-        open
-      end
-
-      # Read new journal records
-      read
-    ensure
-      @fd.flock(File::LOCK_UN) unless @exclusive
-    end
-
+    # Open or reopen file
     def open
       @fd.close if @fd
       @fd = File.open(@file, 'ab+')
@@ -287,24 +284,24 @@ module Daybreak
       stat = @fd.stat
       @inode = stat.ino
       @logsize = 0
-      if stat.size == 0
-        @fd.write(@format.header)
-        @fd.flush
-      end
+      write(@format.header) if stat.size == 0
       @pos = nil
     end
 
+    # Read new file content
     def read
-      # File was opened
-      unless @pos
-        @fd.pos = 0
-        @format.read_header(@fd)
-      else
-        @fd.pos = @pos
+      with_flock(File::LOCK_SH) do
+        # File was opened
+        unless @pos
+          @fd.pos = 0
+          @format.read_header(@fd)
+        else
+          @fd.pos = @pos
+        end
+        buf = @fd.read
+        @pos = @fd.pos
+        buf
       end
-      buf = @fd.read
-      @pos = @fd.pos
-      buf
     end
 
     # Return database dump as string
@@ -321,49 +318,69 @@ module Daybreak
     # Worker thread
     def worker
       loop do
-        record = @queue.next
-        write_record(record) if record
+        case record = @queue.next
+        when Hash
+          write_batch(record)
+        when nil
+          @queue.pop
+          break
+        else
+          write_record(record)
+        end
         @queue.pop
-        break unless record
       end
     rescue Exception => ex
       warn "Daybreak worker: #{ex.message}"
       retry
     end
 
-    # Write record to output stream and
-    # advance input stream
+    # Write batch update
+    def write_batch(records)
+      dump = ''
+      records.each do |record|
+        record[1] = @serializer.dump(record.last)
+        dump << @format.dump(record)
+      end
+      write(dump)
+      @logsize += records.size
+    end
+
+    # Write single record
     def write_record(record)
       record[1] = @serializer.dump(record.last) if record.size > 1
-      record = @format.dump(record)
-      exclusive do
-        @fd.write(record)
-        # Flush to make sure the file is really updated
-        @fd.flush
-      end
-      @pos = @fd.pos if @pos && @fd.pos == @pos + record.bytesize
+      write(@format.dump(record))
       @logsize += 1
     end
 
-    # Lock database exclusively
-    def exclusive
-      return yield if @exclusive
+    # Write data to output stream and advance @pos
+    def write(dump)
+      with_flock(File::LOCK_EX) do
+        @fd.write(dump)
+        # Flush to make sure the file is really updated
+        @fd.flush
+      end
+      @pos = @fd.pos if @pos && @fd.pos == @pos + dump.bytesize
+    end
+
+    # Block with file lock
+    def with_flock(mode)
+      return yield if @locked
       begin
         loop do
           # HACK: JRuby returns false if the process is already hold by the same process
           # see https://github.com/jruby/jruby/issues/496
-          Thread.pass until @fd.flock(File::LOCK_EX)
+          Thread.pass until @fd.flock(mode)
           # Check if database was compactified in the meantime
           # break if not
           stat = @fd.stat
           break if stat.nlink > 0 && stat.ino == @inode
           open
         end
-        @exclusive = true
+        @locked = true
         yield
       ensure
         @fd.flock(File::LOCK_UN)
-        @exclusive = false
+        @locked = false
       end
     end
 
