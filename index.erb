@@ -46,6 +46,10 @@
         margin: 0px 0px 1em;
       }
 
+      p.badges {
+        text-align: right;
+      }
+
       h1, h2, h3 {
         text-rendering: optimizeLegibility;
         margin-left: -5px;
@@ -183,9 +187,9 @@
                     ~^~ ^ ^~^~ ~^~ ~ ~^~~^~^-=~=~=-~^~^~^~
 </pre>
     <p>
-      <p style="text-align: right">
-	<a href="http://rubygems.org/gems/daybreak"><img src="https://badge.fury.io/rb/daybreak.png"/></a>
-	<a href="http://travis-ci.org/propublica/daybreak"><img src="https://secure.travis-ci.org/propublica/daybreak.png?branch=master"/></a>
+      <p class="badges">
+        <a href="http://rubygems.org/gems/daybreak"><img src="https://badge.fury.io/rb/daybreak.png"/></a>
+        <a href="http://travis-ci.org/propublica/daybreak"><img src="https://secure.travis-ci.org/propublica/daybreak.png?branch=master"/></a>
       </p>
       Daybreak is a simple and very fast key value store for ruby. It has user defined persistence,
       and all data is stored in a table in memory, so ruby niceties are available.
@@ -277,7 +281,7 @@ RUBY
     </code>
     <p>
       You can provide your own serializer, see <tt>Daybreak::Serializer::Default</tt> if you want a different serialization
-      strategy (for example, JSON). You can also provide your own formatter, see <tt>Daybreak::Formatter</tt> if
+      strategy (for example, JSON). You can also provide your own format, see <tt>Daybreak::Format</tt> if
       you want to format your database log differently.
     </p>
     <h2>Architecture</h2>
