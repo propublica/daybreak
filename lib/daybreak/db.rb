@@ -122,6 +122,7 @@ module Daybreak
       value
     end
 
+    # Update database with hash (Fast batch update)
     def update(hash)
       shash = {}
       hash.each do |key, value|
@@ -132,6 +133,7 @@ module Daybreak
       self
     end
 
+    # Updata database and flush data to disk.
     def update!(hash)
       update(hash)
       flush
@@ -353,6 +355,7 @@ module Daybreak
       retry
     end
 
+    # Write batch update
     def write_batch(records)
       dump = ''
       records.each do |record|
@@ -362,6 +365,13 @@ module Daybreak
       write(dump, records.size)
     end
 
+    # Write single record
+    def write_record(record)
+      record[1] = @serializer.dump(record.last) if record.size > 1
+      write(@format.dump(record), 1)
+    end
+
+    # Write data to output stream and advance @pos
     def write(dump, records)
       exclusive do
         @fd.write(dump)
@@ -370,13 +380,6 @@ module Daybreak
       end
       @pos = @fd.pos if @pos && @fd.pos == @pos + dump.bytesize
       @logsize += records
-    end
-
-    # Write record to output stream and
-    # advance input stream
-    def write_record(record)
-      record[1] = @serializer.dump(record.last) if record.size > 1
-      write(@format.dump(record), 1)
     end
 
     # Lock database exclusively
