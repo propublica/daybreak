@@ -226,6 +226,10 @@ $ gem install daybreak
   # set the value of a key and flush the change to disk
   db.set! 'bar', 2
 
+  # You can also use atomic batch updates
+  db.update :alpha => 1, :beta => 2
+  db.update! :alpha => 1, :beta => 2
+
   # all keys are cast to strings via #to_s
   db[1] = 2
   db.keys.include? 1 # => false
