@@ -59,7 +59,7 @@ module Daybreak
       @mutex = Mutex.new # Mutex to make #lock thread safe
       @worker = Thread.new(&method(:worker))
       @worker.priority = -1
-      update
+      load
       self.class.register(self)
     end
 
@@ -122,6 +122,21 @@ module Daybreak
       value
     end
 
+    def update(hash)
+      shash = {}
+      hash.each do |key, value|
+        shash[@serializer.key_for(key)] = value
+      end
+      @queue << shash
+      @table.update(shash)
+      self
+    end
+
+    def update!(hash)
+      update(hash)
+      flush
+    end
+
     # Does this db have a value for this key?
     # @param key the key to check if the DB has a key.
     def has_key?(key)
@@ -166,13 +181,14 @@ module Daybreak
     # Flush all changes to disk.
     def flush
       @queue.flush
+      self
     end
 
     # Sync the database with what is on disk, by first flushing changes, and
     # then reading the file if necessary.
     def sync
       flush
-      update
+      load
     end
 
     # Lock the database for an exclusive commit accross processes and threads
@@ -183,7 +199,7 @@ module Daybreak
         # so that @exclusive is not modified by the worker
         flush
         exclusive do
-          update
+          load
           result = yield
           flush
           result
@@ -224,8 +240,7 @@ module Daybreak
         end
       end
       open
-      update
-      self
+      load
     end
 
     # Close the database for reading and writing.
@@ -246,7 +261,7 @@ module Daybreak
     private
 
     # Update the @table with records read from the file, and increment @logsize
-    def update
+    def load
       buf = new_records
       until buf.empty?
         record = @format.parse(buf)
@@ -257,6 +272,7 @@ module Daybreak
         end
         @logsize += 1
       end
+      self
     end
 
     # Read new records from journal log and return buffer
@@ -321,28 +337,46 @@ module Daybreak
     # Worker thread
     def worker
       loop do
-        record = @queue.next
-        write_record(record) if record
+        case record = @queue.next
+        when Hash
+          write_batch(record)
+        when nil
+          @queue.pop
+          break
+        else
+          write_record(record)
+        end
         @queue.pop
-        break unless record
       end
     rescue Exception => ex
       warn "Daybreak worker: #{ex.message}"
       retry
     end
 
+    def write_batch(records)
+      dump = ''
+      records.each do |record|
+        record[1] = @serializer.dump(record.last)
+        dump << @format.dump(record)
+      end
+      write(dump, records.size)
+    end
+
+    def write(dump, records)
+      exclusive do
+        @fd.write(dump)
+        # Flush to make sure the file is really updated
+        @fd.flush
+      end
+      @pos = @fd.pos if @pos && @fd.pos == @pos + dump.bytesize
+      @logsize += records
+    end
+
     # Write record to output stream and
     # advance input stream
     def write_record(record)
       record[1] = @serializer.dump(record.last) if record.size > 1
-      record = @format.dump(record)
-      exclusive do
-        @fd.write(record)
-        # Flush to make sure the file is really updated
-        @fd.flush
-      end
-      @pos = @fd.pos if @pos && @fd.pos == @pos + record.bytesize
-      @logsize += 1
+      write(@format.dump(record), 1)
     end
 
     # Lock database exclusively
