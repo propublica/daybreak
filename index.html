@@ -217,6 +217,10 @@ $ gem install daybreak
   <span class="c1"># set the value of a key and flush the change to disk</span>
   <span class="n">db</span><span class="o">.</span><span class="n">set!</span> <span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="mi">2</span>
 
+  <span class="c1"># You can also use atomic batch updates</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">update</span> <span class="ss">:alpha</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="ss">:beta</span> <span class="o">=&gt;</span> <span class="mi">2</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">update!</span> <span class="ss">:alpha</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="ss">:beta</span> <span class="o">=&gt;</span> <span class="mi">2</span>
+
   <span class="c1"># all keys are cast to strings via #to_s</span>
   <span class="n">db</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">=</span> <span class="mi">2</span>
   <span class="n">db</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">include?</span> <span class="mi">1</span> <span class="c1"># =&gt; false</span>
