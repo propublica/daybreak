@@ -336,10 +336,11 @@ describe Daybreak::DB do
     end
   end
 
-  it 'should support set! in lock' do
+  it 'should support set! and delete! in lock' do
     @db[1] = 2
     @db.lock do
       @db.set!(1, 2)
+      @db.delete!(1)
     end
   end
 
