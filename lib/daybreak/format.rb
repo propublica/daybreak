@@ -13,13 +13,14 @@ module Daybreak
     end
 
     # Return database header as string
+    # @return [String] database file header
     def header
       MAGIC + [VERSION].pack('n')
     end
 
     # Serialize record and return string
-    # @param [Array] record an array with [key, value] or [key] if the record is
-    # deleted
+    # @param [Array] record an array with [key, value] or [key] if the record is deleted
+    # @return [String] serialized record
     def dump(record)
       data =
         if record.size == 1
@@ -32,6 +33,7 @@ module Daybreak
 
     # Deserialize record from buffer
     # @param [String] buf the buffer to read from
+    # @return [Array] deserialized record [key, value] or [key] if the record is deleted
     def parse(buf)
       key_size, value_size = buf[0, 8].unpack('NN')
       data = buf.slice!(0, 8 + key_size + (value_size == DELETE ? 0 : value_size))
@@ -41,10 +43,18 @@ module Daybreak
 
     protected
 
+    # Magic string of the file header
     MAGIC = 'DAYBREAK'
+
+    # Database file format version
     VERSION = 1
+
+    # Special value size used for deleted records
     DELETE = (1 << 32) - 1
 
+    # Compute crc32 of string
+    # @param [String] s a string
+    # @return [Fixnum]
     def crc32(s)
       [Zlib.crc32(s, 0)].pack('N')
     end
