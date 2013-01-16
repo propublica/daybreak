@@ -57,7 +57,7 @@ module Daybreak
     private
 
     # Check threads 10 times per second to avoid deadlocks
-    # since there is a race condition below
+    # since there is a race condition above
     def heartbeat
       until @stop
         @empty.each(&:wakeup)
