@@ -5,16 +5,22 @@ module Daybreak
     # @api public
     class Default
       # Transform the key to a string
+      # @param [Object] key
+      # @return [String] key transformed to string
       def key_for(key)
         key.to_s
       end
 
       # Serialize a value
+      # @param [Object] value
+      # @return [String] value transformed to string
       def dump(value)
         Marshal.dump(value)
       end
 
       # Parse a value
+      # @param [String] value
+      # @return [Object] deserialized value
       def load(value)
         Marshal.load(value)
       end
