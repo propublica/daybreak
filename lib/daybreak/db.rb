@@ -62,7 +62,7 @@ module Daybreak
     end
 
     # Return default value belonging to key
-    # @param key the default value to retrieve.
+    # @param [Object] key the default value to retrieve.
     def default(key = nil)
       @table.default(key)
     end
@@ -70,7 +70,7 @@ module Daybreak
     # Retrieve a value at key from the database. If the default value was specified
     # when this database was created, that value will be set and returned. Aliased
     # as <tt>get</tt>.
-    # @param key the value to retrieve from the database.
+    # @param [Object] key the value to retrieve from the database.
     def [](key)
       @table[@serializer.key_for(key)]
     end
@@ -78,8 +78,8 @@ module Daybreak
 
     # Set a key in the database to be written at some future date. If the data
     # needs to be persisted immediately, call <tt>db.set(key, value, true)</tt>.
-    # @param [#to_s] key the key of the storage slot in the database
-    # @param value the value to store
+    # @param [Object] key the key of the storage slot in the database
+    # @param [Object] value the value to store
     def []=(key, value)
       key = @serializer.key_for(key)
       @queue << [key, value]
@@ -88,8 +88,8 @@ module Daybreak
     alias_method :set, :'[]='
 
     # set! flushes data immediately to disk.
-    # @param key the key of the storage slot in the database
-    # @param value the value to store
+    # @param [Object] key the key of the storage slot in the database
+    # @param [Object] value the value to store
     def set!(key, value)
       set(key, value)
       flush
@@ -97,7 +97,7 @@ module Daybreak
     end
 
     # Delete a key from the database
-    # @param key the key of the storage slot in the database
+    # @param [Object] key the key of the storage slot in the database
     def delete(key)
       key = @serializer.key_for(key)
       @queue << [key]
@@ -105,7 +105,7 @@ module Daybreak
     end
 
     # Immediately delete the key on disk.
-    # @param key the key of the storage slot in the database
+    # @param [Object] key the key of the storage slot in the database
     def delete!(key)
       value = delete(key)
       flush
@@ -130,7 +130,7 @@ module Daybreak
     end
 
     # Does this db have a value for this key?
-    # @param key the key to check if the DB has a key.
+    # @param [Object] key the key to check if the DB has a key.
     def has_key?(key)
       @table.has_key?(@serializer.key_for(key))
     end
@@ -171,7 +171,7 @@ module Daybreak
     end
 
     # Return the keys in the db.
-    # @return [Array]
+    # @return [Array<String>]
     def keys
       @table.keys
     end
