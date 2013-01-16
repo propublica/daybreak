@@ -63,8 +63,9 @@ module Daybreak
 
     # Return default value belonging to key
     # @param [Object] key the default value to retrieve.
+    # @return [Object] value the default value
     def default(key = nil)
-      @table.default(key)
+      @table.default(@serializer.key_for(key))
     end
 
     # Retrieve a value at key from the database. If the default value was specified
@@ -75,7 +76,7 @@ module Daybreak
     def [](key)
       @table[@serializer.key_for(key)]
     end
-    alias_method :get, :'[]'
+    alias_method :get, '[]'
 
     # Set a key in the database to be written at some future date. If the data
     # needs to be persisted immediately, call <tt>db.set(key, value, true)</tt>.
@@ -87,7 +88,7 @@ module Daybreak
       @queue << [key, value]
       @table[key] = value
     end
-    alias_method :set, :'[]='
+    alias_method :set, '[]='
 
     # set! flushes data immediately to disk.
     # @param [Object] key the key of the storage slot in the database

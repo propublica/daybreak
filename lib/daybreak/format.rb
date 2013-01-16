@@ -6,6 +6,7 @@ module Daybreak
   class Format
     # Read database header from input stream
     # @param [#read] input the input stream
+    # @return void
     def read_header(input)
       raise 'Not a Daybreak database' if input.read(MAGIC.bytesize) != MAGIC
       ver = input.read(2).unpack('n').first

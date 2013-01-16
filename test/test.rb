@@ -119,6 +119,7 @@ describe Daybreak::DB do
 
   it 'should allow for default values' do
     db = Daybreak::DB.new(DB_PATH, :default => 0)
+    assert_equal db.default(1), 0
     assert_equal db[1], 0
     assert db.include? '1'
     db[1] = 1
@@ -130,6 +131,7 @@ describe Daybreak::DB do
 
   it 'should handle default values that are procs' do
     db = Daybreak::DB.new(DB_PATH) {|key| set = Set.new; set << key }
+    assert db.default(:test).include? 'test'
     assert db['foo'].is_a? Set
     assert db.include? 'foo'
     assert db['bar'].include? 'bar'
