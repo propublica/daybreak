@@ -118,6 +118,8 @@ module Daybreak
     end
 
     # Update database with hash (Fast batch update)
+    # @param [Hash] hash the key/value hash
+    # @return [DB] self
     def update(hash)
       shash = {}
       hash.each do |key, value|
@@ -129,6 +131,8 @@ module Daybreak
     end
 
     # Updata database and flush data to disk.
+    # @param [Hash] hash the key/value hash
+    # @return [DB] self
     def update!(hash)
       update(hash)
       flush
@@ -187,7 +191,7 @@ module Daybreak
     end
 
     # Flush all changes to disk.
-    # @return [Daybreak::DB] self
+    # @return [DB] self
     def flush
       @queue.flush
       self
@@ -195,7 +199,7 @@ module Daybreak
 
     # Sync the database with what is on disk, by first flushing changes, and
     # then reading the file if necessary.
-    # @return [Daybreak::DB] self
+    # @return [DB] self
     def sync
       flush
       load
@@ -220,7 +224,7 @@ module Daybreak
     end
 
     # Remove all keys and values from the database.
-    # @return [Daybreak::DB] self
+    # @return [DB] self
     def clear
       flush
       with_tmpfile do |path, file|
@@ -235,7 +239,7 @@ module Daybreak
     end
 
     # Compact the database to remove stale commits and reduce the file size.
-    # @return [Daybreak::DB] self
+    # @return [DB] self
     def compact
       sync
       with_tmpfile do |path, file|
