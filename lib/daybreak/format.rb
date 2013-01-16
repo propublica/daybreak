@@ -1,6 +1,6 @@
 module Daybreak
   # Database format serializer and deserializer. You can create
-  # your own implementations of this class method and define
+  # your own implementation of this class and define
   # your own database format!
   # @api public
   class Format
