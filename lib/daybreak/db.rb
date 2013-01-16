@@ -14,14 +14,15 @@ module Daybreak
     # Set default value, can be a callable
     attr_writer :default
 
-    @databases = []
-    @databases_mutex = Mutex.new
+    @@databases = []
+    @@databases_mutex = Mutex.new
 
     # A handler that will ensure that databases are closed and synced when the
     # current process exits.
-    at_exit do
+    # @api private
+    def self.exit_handler
       loop do
-        db = @databases_mutex.synchronize { @databases.first }
+        db = @@databases_mutex.synchronize { @@databases.first }
         break unless db
         warn "Daybreak database #{db.file} was not closed, state might be inconsistent"
         begin
@@ -32,17 +33,7 @@ module Daybreak
       end
     end
 
-    class << self
-      # @api private
-      def register(db)
-        @databases_mutex.synchronize { @databases << db }
-      end
-
-      # @api private
-      def unregister(db)
-        @databases_mutex.synchronize { @databases.delete(db) }
-      end
-    end
+   at_exit { Daybreak::DB.exit_handler }
 
     # Create a new Daybreak::DB. The second argument is the default value
     # to store when accessing a previously unset key, this follows the
@@ -64,7 +55,7 @@ module Daybreak
       @worker = Thread.new(&method(:worker))
       @worker.priority = -1
       load
-      self.class.register(self)
+      @@databases_mutex.synchronize { @@databases << self }
     end
 
     # Return default value belonging to key
@@ -252,7 +243,7 @@ module Daybreak
       @worker.join
       @fd.close
       @queue.stop if @queue.respond_to?(:stop)
-      self.class.unregister(self)
+      @@databases_mutex.synchronize { @@databases.delete(self) }
       nil
     end
 
