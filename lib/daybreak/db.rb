@@ -14,15 +14,15 @@ module Daybreak
     # Set default value, can be a callable
     attr_writer :default
 
-    # @api private
+    # @private
     @@databases = []
 
-    # @api private
+    # @private
     @@databases_mutex = Mutex.new
 
     # A handler that will ensure that databases are closed and synced when the
     # current process exits.
-    # @api private
+    # @private
     def self.exit_handler
       loop do
         db = @@databases_mutex.synchronize { @@databases.first }
