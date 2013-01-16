@@ -43,6 +43,7 @@ def run(instance, message = '', &blk)
   report measure(instance, &blk)
   puts '=' * 64
 ensure
+  instance.clear if instance.respond_to? :clear
   instance.close if instance.respond_to? :close
 end
 
@@ -70,7 +71,8 @@ rescue Exception => ex
 end
 
 run Hash.new
-run Daybreak::DB.new DB_PATH
+db = Daybreak::DB.new DB_PATH
+run db
 
 db = Daybreak::DB.new DB_PATH
 run db, 'with lock' do
@@ -92,4 +94,15 @@ run db, 'with sync' do
     $errors += 1 unless db[i] == i
     db.sync
   end
+end
+
+hash = DATA.reduce({}) {|m, v| m.merge! v => v }
+db = Daybreak::DB.new DB_PATH
+run db, 'bulk updates' do
+  db.update hash
+end
+
+db = Daybreak::DB.new DB_PATH
+run db, 'bulk updates, synced' do
+  db.update! hash
 end
