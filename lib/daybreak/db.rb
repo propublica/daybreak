@@ -14,32 +14,27 @@ module Daybreak
     # Set default value, can be a callable
     attr_writer :default
 
-    class << self
-      # @api private
-      def setup
-        return if !(@databases.nil? && @databases_mutex.nil?)
-        @databases = []
-        @databases_mutex = Mutex.new
+    @databases = []
+    @databases_mutex = Mutex.new
 
-        # A handler that will ensure that databases are closed and synced when the
-        # current process exits.
-        at_exit do
-          loop do
-            db = @databases_mutex.synchronize { @databases.first }
-            break unless db
-            warn "Daybreak database #{db.file} was not closed, state might be inconsistent"
-            begin
-              db.close
-            rescue Exception => ex
-              warn "Failed to close daybreak database: #{ex.message}"
-            end
-          end
+    # A handler that will ensure that databases are closed and synced when the
+    # current process exits.
+    at_exit do
+      loop do
+        db = @databases_mutex.synchronize { @databases.first }
+        break unless db
+        warn "Daybreak database #{db.file} was not closed, state might be inconsistent"
+        begin
+          db.close
+        rescue Exception => ex
+          warn "Failed to close daybreak database: #{ex.message}"
         end
       end
+    end
 
+    class << self
       # @api private
       def register(db)
-        Thread.exclusive { setup }
         @databases_mutex.synchronize { @databases << db }
       end
 
