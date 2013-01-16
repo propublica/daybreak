@@ -218,8 +218,8 @@ describe Daybreak::DB do
           db["b#{i}"] = i
           sleep 0.01 if i % 100 == 0
         end
-      db.close
-    end
+        db.close
+      end
       Process.wait a
       Process.wait b
       @db = Daybreak::DB.new DB_PATH
