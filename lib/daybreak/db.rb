@@ -14,7 +14,10 @@ module Daybreak
     # Set default value, can be a callable
     attr_writer :default
 
+    # @api private
     @@databases = []
+
+    # @api private
     @@databases_mutex = Mutex.new
 
     # A handler that will ensure that databases are closed and synced when the
