@@ -62,12 +62,8 @@ module Daybreak
       @serializer = (options[:serializer] || Serializer::Default).new
       @format = (options[:format] || Format).new
       @queue = Queue.new
-      @table = Hash.new &method(:hash_block)
-      if block
-        @default = block
-      elsif options.include?(:default)
-        @default = options[:default]
-      end
+      @table = Hash.new(&method(:hash_default))
+      @default = block ? block : options[:default]
       open
       @mutex = Mutex.new # Mutex to make #lock thread safe
       @worker = Thread.new(&method(:worker))
@@ -273,7 +269,7 @@ module Daybreak
     private
 
     # The block used in @table for new entries
-    def hash_block(_, key)
+    def hash_default(_, key)
       if @default != nil
         value = @default.respond_to?(:call) ? @default.call(key) : @default
         @queue << [key, value]
