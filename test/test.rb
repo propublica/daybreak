@@ -11,6 +11,8 @@ describe Daybreak::DB do
   end
 
   it 'should insert' do
+    assert_equal @db[1], nil
+    assert_equal @db.include?(1), false
     @db[1] = 1
     assert_equal @db[1], 1
     assert @db.has_key?(1)
@@ -116,16 +118,24 @@ describe Daybreak::DB do
   end
 
   it 'should allow for default values' do
-    default_db = Daybreak::DB.new(DB_PATH, :default => 0)
-    assert_equal default_db[1], 0
-    default_db[1] = 1
-    assert_equal default_db[1], 1
-    default_db.close
+    db = Daybreak::DB.new(DB_PATH, :default => 0)
+    assert_equal db[1], 0
+    assert db.include? '1'
+    db[1] = 1
+    assert_equal db[1], 1
+    db.default = 42
+    assert_equal db['x'], 42
+    db.close
   end
 
   it 'should handle default values that are procs' do
-    db = Daybreak::DB.new(DB_PATH) {|key| Set.new }
+    db = Daybreak::DB.new(DB_PATH) {|key| set = Set.new; set << key }
     assert db['foo'].is_a? Set
+    assert db.include? 'foo'
+    assert db['bar'].include? 'bar'
+    db.default = proc {|key| [key] }
+    assert db[1].is_a? Array
+    assert db[2] == ['2']
     db.close
   end
 
@@ -208,8 +218,8 @@ describe Daybreak::DB do
           db["b#{i}"] = i
           sleep 0.01 if i % 100 == 0
         end
-      db.close
-    end
+        db.close
+      end
       Process.wait a
       Process.wait b
       @db = Daybreak::DB.new DB_PATH
@@ -326,11 +336,26 @@ describe Daybreak::DB do
     end
   end
 
-  it 'should support set! in lock' do
+  it 'should support set! and delete! in lock' do
     @db[1] = 2
     @db.lock do
       @db.set!(1, 2)
+      @db.delete!(1)
     end
+  end
+
+  it 'should allow for inheritance' do
+    class Subclassed < Daybreak::DB
+      def increment(key, amount = 1)
+        lock { self[key] += amount }
+      end
+    end
+
+    db = Subclassed.new DB_PATH
+    db[1] = 1
+    assert_equal db.increment(1), 2
+    db.clear
+    db.close
   end
 
   after do

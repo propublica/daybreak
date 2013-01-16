@@ -5,19 +5,24 @@ module Daybreak
   class DB
     include Enumerable
 
-    # Accessors for the database file, and a counter of how many records are in
-    # sync with the file.
-    attr_reader :file, :logsize
+    # Database file name
+    attr_reader :file
+
+    # Counter of how many records are in
+    attr_reader :logsize
+
+    # Set default value, can be a callable
     attr_writer :default
 
-    @databases = []
-    @databases_mutex = Mutex.new
+    @@databases = []
+    @@databases_mutex = Mutex.new
 
     # A handler that will ensure that databases are closed and synced when the
     # current process exits.
-    at_exit do
+    # @api private
+    def self.exit_handler
       loop do
-        db = @databases_mutex.synchronize { @databases.first }
+        db = @@databases_mutex.synchronize { @@databases.first }
         break unless db
         warn "Daybreak database #{db.file} was not closed, state might be inconsistent"
         begin
@@ -28,17 +33,7 @@ module Daybreak
       end
     end
 
-    class << self
-      # @api private
-      def register(db)
-        @databases_mutex.synchronize { @databases << db }
-      end
-
-      # @api private
-      def unregister(db)
-        @databases_mutex.synchronize { @databases.delete(db) }
-      end
-    end
+   at_exit { Daybreak::DB.exit_handler }
 
     # Create a new Daybreak::DB. The second argument is the default value
     # to store when accessing a previously unset key, this follows the
@@ -52,21 +47,21 @@ module Daybreak
       @file = file
       @serializer = (options[:serializer] || Serializer::Default).new
       @format = (options[:format] || Format).new
-      @default = block ? block : options[:default]
       @queue = Queue.new
-      @table = {}
+      @table = Hash.new(&method(:hash_default))
+      @default = block ? block : options[:default]
       open
       @mutex = Mutex.new # Mutex to make #lock thread safe
       @worker = Thread.new(&method(:worker))
       @worker.priority = -1
       load
-      self.class.register(self)
+      @@databases_mutex.synchronize { @@databases << self }
     end
 
     # Return default value belonging to key
     # @param key the default value to retrieve.
     def default(key = nil)
-      @default.respond_to?(:call) ? @default.call(key) : @default
+      @table.default(key)
     end
 
     # Retrieve a value at key from the database. If the default value was specified
@@ -74,15 +69,7 @@ module Daybreak
     # as <tt>get</tt>.
     # @param key the value to retrieve from the database.
     def [](key)
-      skey = @serializer.key_for(key)
-      value = @table[skey]
-      if value != nil || @table.has_key?(skey)
-        value
-      elsif @default
-        value = default(key)
-        @queue << [skey, value]
-        @table[skey] = value
-      end
+      @table[@serializer.key_for(key)]
     end
     alias_method :get, :'[]'
 
@@ -159,6 +146,12 @@ module Daybreak
       @table.size
     end
     alias_method :length, :size
+
+    # Utility method that will return the size of the database in bytes,
+    # useful for determining when to compact
+    def bytesize
+      @fd.stat.size unless closed?
+    end
 
     # Return true if database is empty.
     # @return [Boolean]
@@ -250,7 +243,7 @@ module Daybreak
       @worker.join
       @fd.close
       @queue.stop if @queue.respond_to?(:stop)
-      self.class.unregister(self)
+      @@databases_mutex.synchronize { @@databases.delete(self) }
       nil
     end
 
@@ -260,6 +253,15 @@ module Daybreak
     end
 
     private
+
+    # The block used in @table for new entries
+    def hash_default(_, key)
+      if @default != nil
+        value = @default.respond_to?(:call) ? @default.call(key) : @default
+        @queue << [key, value]
+        @table[key] = value
+      end
+    end
 
     # Update the @table with records
     def load

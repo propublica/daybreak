@@ -312,7 +312,7 @@ RUBY
       Writes with duplicate keys are simply appended to the end of the file.
       From time to time you will want to run <tt>compact</tt> which will remove
       old commits from the file and create a smaller logfile. This will shrink the
-      space necessary to store the data on disk. You can even do compactification from
+      space necessary to store the data on disk. You can also compact from
       a background process.
     </p>
 
@@ -376,6 +376,9 @@ RUBY
     <h2>Change Log</h2>
 
     <dl>
+      <dd><b>0.2.1</b></dd>
+      <dt>Add bulk updates with <tt>update</tt> and it's friend <tt>update!</tt>.
+        and add a subclass fix (thanks <a href="https://github.com/ch1c0t">ch1c0t</a>).</dt>
       <dd><b>0.2.0</b></dd>
       <dt>
         Pretty much a complete rewrite by <a href="https://github.com/minad">minad</a>
