@@ -11,4 +11,7 @@ env:
   matrix:
     - "TASK=test"
     - "TASK=bench"
+  allowed_failures:
+    env:
+      - "TASK=bench"
 script: "bundle exec rake $TASK"
