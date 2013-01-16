@@ -1,8 +1,12 @@
 module Daybreak
+  # A queue for ruby implementations with a GIL
+  #
+  # HACK: Dangerous optimization on MRI which has a
+  # global interpreter lock and makes the @queue array
+  # thread safe.
+  #
+  # @api private
   class Queue
-    # HACK: Dangerous optimization on MRI which has a
-    # global interpreter lock and makes the @queue array
-    # thread safe.
     def initialize
       @queue, @full, @empty = [], [], []
       @stop = false
