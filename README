@@ -1,7 +1,7 @@
-             ^^            |
-  daybreak     ^^        \ _ /
-                      -= /   \ =-
-~^~ ^ ^~^~ ~^~ ~ ~^~~^~^-=~=~=-~^~^~^~
+               ^^            |
+    daybreak     ^^        \ _ /
+                        -= /   \ =-
+  ~^~ ^ ^~^~ ~^~ ~ ~^~~^~^-=~=~=-~^~^~^~
 
 Daybreak is a simple key value store for ruby. It has user defined persistence,
 and all data is stored in a table in memory so ruby niceties are available.
