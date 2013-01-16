@@ -71,6 +71,7 @@ module Daybreak
     # when this database was created, that value will be set and returned. Aliased
     # as <tt>get</tt>.
     # @param [Object] key the value to retrieve from the database.
+    # @return [Object] the value
     def [](key)
       @table[@serializer.key_for(key)]
     end
@@ -80,6 +81,7 @@ module Daybreak
     # needs to be persisted immediately, call <tt>db.set(key, value, true)</tt>.
     # @param [Object] key the key of the storage slot in the database
     # @param [Object] value the value to store
+    # @return [Object] the value
     def []=(key, value)
       key = @serializer.key_for(key)
       @queue << [key, value]
@@ -90,6 +92,7 @@ module Daybreak
     # set! flushes data immediately to disk.
     # @param [Object] key the key of the storage slot in the database
     # @param [Object] value the value to store
+    # @return [Object] the value
     def set!(key, value)
       set(key, value)
       flush
@@ -98,6 +101,7 @@ module Daybreak
 
     # Delete a key from the database
     # @param [Object] key the key of the storage slot in the database
+    # @return [Object] the value
     def delete(key)
       key = @serializer.key_for(key)
       @queue << [key]
@@ -106,6 +110,7 @@ module Daybreak
 
     # Immediately delete the key on disk.
     # @param [Object] key the key of the storage slot in the database
+    # @return [Object] the value
     def delete!(key)
       value = delete(key)
       flush
@@ -129,8 +134,9 @@ module Daybreak
       flush
     end
 
-    # Does this db have a value for this key?
-    # @param [Object] key the key to check if the DB has a key.
+    # Does this db have this key?
+    # @param [Object] key the key to check if the DB has it
+    # @return [Boolean]
     def has_key?(key)
       @table.has_key?(@serializer.key_for(key))
     end
@@ -138,6 +144,9 @@ module Daybreak
     alias_method :include?, :has_key?
     alias_method :member?, :has_key?
 
+    # Does this db have this value?
+    # @param [Object] value the value to check if the DB has it
+    # @return [Boolean]
     def has_value?(value)
       @table.has_value?(value)
     end
@@ -152,6 +161,7 @@ module Daybreak
 
     # Utility method that will return the size of the database in bytes,
     # useful for determining when to compact
+    # @return [Integer]
     def bytesize
       @fd.size
     end
@@ -177,6 +187,7 @@ module Daybreak
     end
 
     # Flush all changes to disk.
+    # @return [Daybreak::DB] self
     def flush
       @queue.flush
       self
@@ -184,6 +195,7 @@ module Daybreak
 
     # Sync the database with what is on disk, by first flushing changes, and
     # then reading the file if necessary.
+    # @return [Daybreak::DB] self
     def sync
       flush
       load
@@ -191,6 +203,7 @@ module Daybreak
 
     # Lock the database for an exclusive commit accross processes and threads
     # @yield a block where every change to the database is synced
+    # @return result of the block
     def lock
       @mutex.synchronize do
         # Flush everything to start with a clean state
@@ -207,6 +220,7 @@ module Daybreak
     end
 
     # Remove all keys and values from the database.
+    # @return [Daybreak::DB] self
     def clear
       flush
       with_tmpfile do |path, file|
@@ -221,6 +235,7 @@ module Daybreak
     end
 
     # Compact the database to remove stale commits and reduce the file size.
+    # @return [Daybreak::DB] self
     def compact
       sync
       with_tmpfile do |path, file|
@@ -241,6 +256,7 @@ module Daybreak
     end
 
     # Close the database for reading and writing.
+    # @return nil
     def close
       @queue << nil
       @worker.join
@@ -251,6 +267,7 @@ module Daybreak
     end
 
     # Check to see if we've already closed the database.
+    # @return [Boolean]
     def closed?
       @fd.closed?
     end
