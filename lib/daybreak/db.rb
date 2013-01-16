@@ -57,13 +57,7 @@ module Daybreak
       @serializer = (options[:serializer] || Serializer::Default).new
       @format = (options[:format] || Format).new
       @queue = Queue.new
-      @table = Hash.new do |_, key|
-        if @default != nil
-          value = @default.respond_to?(:call) ? @default.call(key) : @default
-          @queue << [key, value]
-          @table[key] = value
-        end
-      end
+      @table = Hash.new &method(:hash_block)
       if block
         self.default = block
       elsif options.include?(:default)
@@ -272,6 +266,15 @@ module Daybreak
     end
 
     private
+
+    # The block used in @table for new entries
+    def hash_block(_, key)
+      if @default != nil
+        value = @default.respond_to?(:call) ? @default.call(key) : @default
+        @queue << [key, value]
+        @table[key] = value
+      end
+    end
 
     # Update the @table with records
     def load
