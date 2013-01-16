@@ -4,7 +4,7 @@ module Daybreak
     # keys to strings and marshalls values
     # @api public
     class Default
-      # Return the value of the key to insert into the database
+      # Transform the key to a string
       def key_for(key)
         key.to_s
       end
