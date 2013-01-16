@@ -153,7 +153,7 @@ module Daybreak
     # Utility method that will return the size of the database in bytes,
     # useful for determining when to compact
     def bytesize
-      @fd.stat.size unless closed?
+      @fd.size
     end
 
     # Return true if database is empty.
