@@ -344,6 +344,20 @@ describe Daybreak::DB do
     end
   end
 
+  it 'should allow for inheritance' do
+    class Subclassed < Daybreak::DB
+      def increment(key, amount = 1)
+        lock { self[key] += amount }
+      end
+    end
+
+    db = Subclassed.new DB_PATH
+    db[1] = 1
+    assert_equal db.increment(1), 2
+    db.clear
+    db.close
+  end
+
   after do
     @db.clear
     @db.close
