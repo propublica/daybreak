@@ -166,6 +166,12 @@ module Daybreak
     end
     alias_method :length, :size
 
+    # Utility method that will return the size of the database in bytes,
+    # useful for determining when to compact
+    def log_size
+      @pos
+    end
+
     # Return true if database is empty.
     # @return [Boolean]
     def empty?
