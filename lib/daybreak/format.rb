@@ -35,7 +35,7 @@ module Daybreak
     def parse(buf)
       key_size, value_size = buf[0, 8].unpack('NN')
       data = buf.slice!(0, 8 + key_size + (value_size == DELETE ? 0 : value_size))
-      raise 'CRC mismatch' unless buf.slice!(0, 4) == crc32(data)
+      raise 'CRC mismatch: your data might be corrupted!' unless buf.slice!(0, 4) == crc32(data)
       value_size == DELETE ? [data[8, key_size]] : [data[8, key_size], data[8 + key_size, value_size]]
     end
 
