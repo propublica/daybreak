@@ -59,9 +59,9 @@ module Daybreak
       @queue = Queue.new
       @table = Hash.new &method(:hash_block)
       if block
-        self.default = block
+        @default = block
       elsif options.include?(:default)
-        self.default = options[:default]
+        @default = options[:default]
       end
       open
       @mutex = Mutex.new # Mutex to make #lock thread safe
