@@ -4,10 +4,10 @@ require 'ruby-prof'
 
 result = RubyProf.profile do
   db = Daybreak::DB.new './t.db'
-  100.times {|n| db[n] = n}
+  10.times {|n| db[n] = n}
   db.flush
+  db.close
 end
-db.close
 File.unlink './t.db'
 printer = RubyProf::MultiPrinter.new(result)
 FileUtils.mkdir('./profile') unless File.exists? './profile'
