@@ -11,6 +11,9 @@ module Daybreak
     # Counter of how many records are in
     attr_reader :logsize
 
+    # Set default value, can be a callable
+    attr_writer :default
+
     @databases = []
     @databases_mutex = Mutex.new
 
@@ -54,7 +57,13 @@ module Daybreak
       @serializer = (options[:serializer] || Serializer::Default).new
       @format = (options[:format] || Format).new
       @queue = Queue.new
-      @table = {}
+      @table = Hash.new do |_, key|
+        if @default != nil
+          value = @default.respond_to?(:call) ? @default.call(key) : @default
+          @queue << [key, value]
+          @table[key] = value
+        end
+      end
       if block
         self.default = block
       elsif options.include?(:default)
@@ -72,24 +81,6 @@ module Daybreak
     # @param key the default value to retrieve.
     def default(key = nil)
       @table.default(key)
-    end
-
-    # Set default value
-    # @param value the default value, can be a callable
-    def default=(value = nil)
-      @table.default_proc =
-        if value.respond_to?(:call)
-          proc do |hash, key|
-            v = value.call(key)
-            @queue << [key, v]
-            hash[key] = v
-          end
-        else
-          proc do |hash, key|
-            @queue << [key, value]
-            hash[key] = value
-          end
-        end
     end
 
     # Retrieve a value at key from the database. If the default value was specified
