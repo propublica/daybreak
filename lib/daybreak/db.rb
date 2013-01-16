@@ -208,6 +208,7 @@ module Daybreak
 
     # Lock the database for an exclusive commit accross processes and threads
     # @yield a block where every change to the database is synced
+    # @yieldparam [DB] self
     # @return result of the block
     def lock
       @mutex.synchronize do
@@ -217,7 +218,7 @@ module Daybreak
 
         with_flock(File::LOCK_EX) do
           load
-          result = yield
+          result = yield(self)
           flush
           result
         end

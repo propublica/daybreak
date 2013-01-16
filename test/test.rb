@@ -191,7 +191,7 @@ describe Daybreak::DB do
 
   it 'should have threadsafe lock' do
     @db[1] = 0
-    inc = proc { 1000.times { @db.lock { @db[1] += 1 } } }
+    inc = proc { 1000.times { @db.lock {|d| d[1] += 1 } } }
     a = Thread.new &inc
     b = Thread.new &inc
     a.join
