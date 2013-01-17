@@ -33,7 +33,6 @@ module Daybreak
       @default = block ? block : options[:default]
       @mutex = Mutex.new # Mutex used by #synchronize and #lock
       @@databases_mutex.synchronize { @@databases << self }
-      @journal.replay
     end
 
     # Database file name
@@ -188,8 +187,7 @@ module Daybreak
     # then loading the new records if necessary.
     # @return [DB] self
     def load
-      @journal.flush
-      @journal.replay
+      @journal.load
       self
     end
     alias_method :sunrise, :load

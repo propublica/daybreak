@@ -14,6 +14,7 @@ module Daybreak
       open
       @worker = Thread.new(&method(:worker))
       @worker.priority = -1
+      load
     end
 
     def closed?
@@ -26,6 +27,11 @@ module Daybreak
       @worker.join
       @fd.close
       super
+    end
+
+    def load
+      flush
+      replay
     end
 
     # Lock the logfile across thread and process boundaries
@@ -58,8 +64,7 @@ module Daybreak
 
     # Compact the logfile to represent the in-memory state
     def compact(records)
-      flush
-      replay
+      load
       with_tmpfile do |path, file|
         # Compactified database has the same size -> return
         return self if @pos == file.write(dump(records, @format.header))
@@ -81,6 +86,8 @@ module Daybreak
       @fd.stat.size
     end
 
+    private
+
     # Emit records as we parse them
     def replay
       unless @pos
@@ -93,8 +100,6 @@ module Daybreak
         @logsize += 1
       end
     end
-
-    private
 
     # Open or reopen file
     def open
