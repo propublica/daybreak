@@ -5,12 +5,12 @@ module Daybreak
   class Journal
     attr_reader :logsize, :file
 
-    def initialize(file, format, serializer, &blk)
+    def initialize(file, format, serializer, &block)
       @file = file
       @format = format
       @serializer = serializer
       @queue = Queue.new
-      @callback = blk
+      @emit = block
       open
       @worker = Thread.new(&method(:worker))
       @worker.priority = -1
@@ -97,7 +97,7 @@ module Daybreak
       buf = read
       until buf.empty?
         record = @format.parse(buf)
-        emit(record)
+        @emit.call(record)
         @logsize += 1
       end
     end
@@ -107,10 +107,6 @@ module Daybreak
     end
 
     private
-
-    def emit(record)
-      @callback.call record
-    end
 
     # Open or reopen file
     def open
