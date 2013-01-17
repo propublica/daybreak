@@ -7,10 +7,7 @@ module Daybreak
 
     def initialize(file, format, serializer, &block)
       super()
-      @file = file
-      @format = format
-      @serializer = serializer
-      @emit = block
+      @file, @format, @serializer, @emit = file, format, serializer, block
       open
       @worker = Thread.new(&method(:worker))
       @worker.priority = -1
