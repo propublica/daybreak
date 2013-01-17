@@ -22,7 +22,9 @@ module Daybreak
       @serializer = (options[:serializer] || Serializer::Default).new
       @table = Hash.new &method(:hash_default)
       @journal = Journal.new(file, (options[:format] || Format).new, @serializer) do |record|
-        if record.size == 1
+        if !record
+          @table.clear
+        elsif record.size == 1
           @table.delete(record.first)
         else
           @table[record.first] = @serializer.load(record.last)

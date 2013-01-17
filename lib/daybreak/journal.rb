@@ -83,6 +83,7 @@ module Daybreak
 
     # Emit records as we parse them
     def replay
+      @emit.call(nil) unless @pos
       buf = read
       until buf.empty?
         @emit.call(@format.parse(buf))
