@@ -198,8 +198,7 @@ module Daybreak
     # @yieldparam [DB] db
     # @return result of the block
     def lock
-      @mutex.synchronize do
-        @journal.lock { yield self }
+      @mutex.synchronize { @journal.lock { yield self } }
       end
     end
 

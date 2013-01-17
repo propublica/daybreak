@@ -35,5 +35,8 @@ module Daybreak
         @empty.wait(@mutex) until @queue.empty?
       end
     end
+
+    def close
+    end
   end
 end

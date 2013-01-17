@@ -53,7 +53,7 @@ module Daybreak
       end
     end
 
-    def stop
+    def close
       @stop = true
       @heartbeat.join
     end

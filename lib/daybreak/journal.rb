@@ -2,14 +2,14 @@ module Daybreak
   # Daybreak::Journal handles background io, compaction and is the arbiter
   # of multiprocess safety
   # @api private
-  class Journal
+  class Journal < Queue
     attr_reader :logsize, :file
 
     def initialize(file, format, serializer, &block)
+      super()
       @file = file
       @format = format
       @serializer = serializer
-      @queue = Queue.new
       @emit = block
       open
       @worker = Thread.new(&method(:worker))
@@ -21,16 +21,6 @@ module Daybreak
       @fd.closed?
     end
 
-    # Queue up a commit
-    def <<(record)
-      @queue << record
-    end
-
-    # Flush the commits to disk
-    def flush
-      @queue.flush
-    end
-
     # Sync queued commits and read new commits from the log file
     def sync
       flush
@@ -39,10 +29,10 @@ module Daybreak
 
     # Clear the queue and close the file handler
     def close
-      @queue << nil
+      self << nil
       @worker.join
       @fd.close
-      @queue.stop if @queue.respond_to?(:stop)
+      super
     end
 
     # Lock the logfile across thread and process boundaries
@@ -148,16 +138,16 @@ module Daybreak
     # Worker thread
     def worker
       loop do
-        case record = @queue.next
+        case record = next
         when Hash
           write_batch(record)
         when nil
-          @queue.pop
+          pop
           break
         else
           write_record(record)
         end
-        @queue.pop
+        pop
       end
     rescue Exception => ex
       warn "Daybreak worker: #{ex.message}"
