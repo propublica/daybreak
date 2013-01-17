@@ -48,7 +48,7 @@ module Daybreak
       with_tmpfile do |path, file|
         file.write(@format.header)
         file.close
-        # Clear acts like a compactification
+        # Clear replaces the database file like a compactification does
         with_flock(File::LOCK_EX) do
           File.rename(path, @file)
         end
@@ -64,7 +64,7 @@ module Daybreak
         # Compactified database has the same size -> return
         return self if @pos == file.write(dump(records, @format.header))
         with_flock(File::LOCK_EX) do
-          # Database was compactified in the meantime
+          # Database was replaced (cleared or compactified) in the meantime
           if @pos != nil
             # Append changed journal records if the database changed during compactification
             file.write(read)
@@ -173,7 +173,7 @@ module Daybreak
           # HACK: JRuby returns false if the process is already hold by the same process
           # see https://github.com/jruby/jruby/issues/496
           Thread.pass until @fd.flock(mode)
-          # Check if database was compactified in the meantime
+          # Check if database was replaced (cleared or compactified) in the meantime
           # break if not
           stat = @fd.stat
           break if stat.nlink > 0 && stat.ino == @inode
