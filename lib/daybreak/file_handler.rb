@@ -109,6 +109,10 @@ module Daybreak
       end
     end
 
+    def size
+      @fd.size
+    end
+
     private
 
     def emit(record)

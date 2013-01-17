@@ -370,6 +370,10 @@ describe Daybreak::DB do
     db.close
   end
 
+  it 'should report the bytesize' do
+    assert @db.bytesize > 0
+  end
+
   after do
     @db.clear
     @db.close
