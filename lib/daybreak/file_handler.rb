@@ -1,4 +1,7 @@
 module Daybreak
+  # Daybreak::FileHandler handles background io, compaction and is the arbiter
+  # of thread and multiprocess safety
+  # @api private
   class FileHandler
     attr_reader :logsize
 
@@ -54,6 +57,7 @@ module Daybreak
       end
     end
 
+    # Clear the database log and yield
     def clear
       flush
       with_tmpfile do |path, file|
