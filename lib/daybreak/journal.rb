@@ -119,8 +119,7 @@ module Daybreak
     end
 
     # Return database dump as string
-    def dump(records, prefix = '')
-      dump = prefix
+    def dump(records, dump = '')
       # each is faster than inject
       records.each do |record|
         record[1] = @serializer.dump(record.last)
