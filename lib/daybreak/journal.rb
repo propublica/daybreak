@@ -90,10 +90,6 @@ module Daybreak
 
     # Emit records as we parse them
     def replay
-      unless @pos
-        @size = 0
-        @emit.call(nil)
-      end
       buf = read
       until buf.empty?
         @emit.call(@format.parse(buf))
@@ -119,6 +115,8 @@ module Daybreak
         unless @pos
           @fd.pos = 0
           @format.read_header(@fd)
+          @size = 0
+          @emit.call(nil)
         else
           @fd.pos = @pos
         end
