@@ -81,15 +81,6 @@ module Daybreak
       load
     end
 
-    # Emit records as we parse them
-    def load
-      buf = read
-      until buf.empty?
-        @emit.call(@format.parse(buf))
-        @logsize += 1
-      end
-    end
-
     def bytesize
       @fd.stat.size
     end
@@ -106,6 +97,15 @@ module Daybreak
       @logsize = 0
       write(@format.header) if stat.size == 0
       @pos = nil
+    end
+
+    # Emit records as we parse them
+    def load
+      buf = read
+      until buf.empty?
+        @emit.call(@format.parse(buf))
+        @logsize += 1
+      end
     end
 
     # Read new file content
@@ -138,7 +138,7 @@ module Daybreak
     # Worker thread
     def worker
       loop do
-        case record = next
+        case record = self.next
         when Hash
           write_batch(record)
         when nil
