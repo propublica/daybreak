@@ -22,19 +22,23 @@ module Daybreak
       @fd.closed?
     end
 
+    # Queue up a commit
     def <<(record)
       @queue << record
     end
 
+    # Flush the commits to disk
     def flush
       @queue.flush
     end
 
+    # Sync queued commits and read new commits from the log file
     def sync
       flush
       load
     end
 
+    # Clear the queue and close the file handler
     def close
       @queue << nil
       @worker.join
@@ -42,6 +46,7 @@ module Daybreak
       @queue.stop if @queue.respond_to?(:stop)
     end
 
+    # Lock the logfile across thread and process boundaries
     def lock
       @mutex.synchronize do
         # Flush everything to start with a clean state
@@ -74,6 +79,7 @@ module Daybreak
       @mutex.synchronize &blk
     end
 
+    # Compact the logfile to represent the in-memory state
     def compact(records)
       sync
       with_tmpfile do |path, file|
