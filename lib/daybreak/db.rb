@@ -21,7 +21,13 @@ module Daybreak
     def initialize(file, options = {}, &block)
       @serializer = (options[:serializer] || Serializer::Default).new
       @table = Hash.new &method(:hash_default)
-      @journal = Journal.new(file, (options[:format] || Format).new, @serializer, &method(:fill))
+      @journal = Journal.new(file, (options[:format] || Format).new, @serializer) do |record|
+        if record.size == 1
+          @table.delete(record.first)
+        else
+          @table[record.first] = @serializer.load(record.last)
+        end
+      end
       @default = block ? block : options[:default]
       @mutex = Mutex.new # Mutex used by #synchronize and #lock
       @@databases_mutex.synchronize { @@databases << self }
@@ -269,15 +275,6 @@ module Daybreak
         value = @default.respond_to?(:call) ? @default.call(key) : @default
         @journal << [key, value]
         @table[key] = value
-      end
-    end
-
-    # receive records from @journal
-    def fill(record)
-      if record.size == 1
-        @table.delete(record.first)
-      else
-        @table[record.first] = @serializer.load(record.last)
       end
     end
   end

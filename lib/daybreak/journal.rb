@@ -101,7 +101,7 @@ module Daybreak
     end
 
     def bytesize
-      @fd.size
+      @fd.stat.size
     end
 
     private
