@@ -267,6 +267,11 @@ $ gem install daybreak
     db['counter'] += 1
   end
 
+  # If you want to synchronize only between threads, prefer synchronize over lock!
+  db.synchronize do
+    db['counter'] += 1
+  end
+
   # DBs can have default values
   db3 = Daybreak::DB.new "example3.db", :default => 'hello!'
   db3['bingo'] #=> hello!
@@ -306,6 +311,12 @@ RUBY
       done by calling <tt>sync</tt> or <tt>lock</tt>. <tt>sync</tt> updates the
       in memory hash table with new database records from the filesystem.
       Use <tt>lock</tt> if you want to make operations atomic across process boundaries.
+    </p>
+
+    <p>
+      If you only want to synchronize between different threads, prefer <tt>synchronize</tt> over <tt>lock<tt>.
+      Be aware that Daybreak is not thread-safe by default, so all (!) accesses have to be wrapped by <tt>synchronize</tt>
+      (This statement is true at least on interpreters without global interpreter lock (Rubinius, JRuby)).
     </p>
 
     <p>
