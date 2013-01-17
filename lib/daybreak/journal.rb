@@ -83,7 +83,10 @@ module Daybreak
 
     # Emit records as we parse them
     def replay
-      @emit.call(nil) unless @pos
+      unless @pos
+        @logsize = 0
+        @emit.call(nil)
+      end
       buf = read
       until buf.empty?
         @emit.call(@format.parse(buf))
@@ -100,7 +103,6 @@ module Daybreak
       @fd.advise(:sequential) if @fd.respond_to? :advise
       stat = @fd.stat
       @inode = stat.ino
-      @logsize = 0
       write(@format.header) if stat.size == 0
       @pos = nil
     end
