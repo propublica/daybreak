@@ -229,7 +229,7 @@ module Daybreak
     # Check to see if we've already closed the database.
     # @return [Boolean]
     def closed?
-      @fd.closed?
+      @handler.closed?
     end
 
     # @private
