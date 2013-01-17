@@ -25,7 +25,7 @@ module Daybreak
       @file = file
       @serializer = (options[:serializer] || Serializer::Default).new
       @table = Hash.new &method(:hash_default)
-      @handler = FileHandler.new @file, (options[:format] || Format).new, @serializer, &method(:fill)
+      @journal = Journal.new @file, (options[:format] || Format).new, @serializer, &method(:fill)
       @default = block ? block : options[:default]
       @@databases_mutex.synchronize { @@databases << self }
     end
@@ -54,7 +54,7 @@ module Daybreak
     # @return [Object] the value
     def []=(key, value)
       key = @serializer.key_for(key)
-      @handler << [key, value]
+      @journal << [key, value]
       @table[key] = value
     end
     alias_method :set, '[]='
@@ -74,7 +74,7 @@ module Daybreak
     # @return [Object] the value
     def delete(key)
       key = @serializer.key_for(key)
-      @handler << [key]
+      @journal << [key]
       @table.delete(key)
     end
 
@@ -95,7 +95,7 @@ module Daybreak
       hash.each do |key, value|
         shash[@serializer.key_for(key)] = value
       end
-      @handler << shash
+      @journal << shash
       @table.update(shash)
       self
     end
@@ -105,7 +105,7 @@ module Daybreak
     # @return [DB] self
     def update!(hash)
       update(hash)
-      @handler.flush
+      @journal.flush
     end
 
     # Does this db have this key?
@@ -137,13 +137,13 @@ module Daybreak
     # useful for determining when to compact
     # @return [Fixnum]
     def bytesize
-      @handler.size
+      @journal.size
     end
 
     # Counter of how many records are in the log
     # @return [Fixnum]
     def logsize
-      @handler.logsize
+      @journal.logsize
     end
 
     # Return true if database is empty.
@@ -169,7 +169,7 @@ module Daybreak
     # Flush all changes to disk.
     # @return [DB] self
     def flush
-      @handler.flush
+      @journal.flush
       self
     end
 
@@ -177,8 +177,8 @@ module Daybreak
     # then reading the file if necessary.
     # @return [DB] self
     def sync
-      @handler.flush
-      @handler.load
+      @journal.flush
+      @journal.load
       self
     end
 
@@ -190,7 +190,7 @@ module Daybreak
     # @yieldparam [DB] db
     # @return result of the block
     def lock
-      @handler.lock { yield self }
+      @journal.lock { yield self }
     end
 
     # Synchronize access to the database from multiple threads
@@ -201,27 +201,27 @@ module Daybreak
     # @yieldparam [DB] db
     # @return result of the block
     def synchronize
-      @handler.synchronize { yield self }
+      @journal.synchronize { yield self }
     end
 
     # Remove all keys and values from the database.
     # @return [DB] self
     def clear
-      @handler.clear { @table.clear }
+      @journal.clear { @table.clear }
       self
     end
 
     # Compact the database to remove stale commits and reduce the file size.
     # @return [DB] self
     def compact
-      @handler.compact(@table)
+      @journal.compact(@table)
       self
     end
 
     # Close the database for reading and writing.
     # @return nil
     def close
-      @handler.close
+      @journal.close
       @@databases_mutex.synchronize { @@databases.delete(self) }
       nil
     end
@@ -229,7 +229,7 @@ module Daybreak
     # Check to see if we've already closed the database.
     # @return [Boolean]
     def closed?
-      @handler.closed?
+      @journal.closed?
     end
 
     # @private
@@ -262,12 +262,12 @@ module Daybreak
     def hash_default(_, key)
       if @default != nil
         value = @default.respond_to?(:call) ? @default.call(key) : @default
-        @handler << [key, value]
+        @journal << [key, value]
         @table[key] = value
       end
     end
 
-    # receive records from @handler
+    # receive records from @journal
     def fill(*record)
       # 1.8.7 sends an array 1 level deep and 1.9.3 sends one 2 levels
       record.flatten!

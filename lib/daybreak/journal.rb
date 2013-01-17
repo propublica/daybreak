@@ -1,8 +1,8 @@
 module Daybreak
-  # Daybreak::FileHandler handles background io, compaction and is the arbiter
+  # Daybreak::Journal handles background io, compaction and is the arbiter
   # of thread and multiprocess safety
   # @api private
-  class FileHandler
+  class Journal
     attr_reader :logsize
 
     def initialize(file, format, serializer, &blk)
