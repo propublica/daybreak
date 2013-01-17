@@ -8,8 +8,6 @@ module Daybreak
     # Database file name
     attr_reader :file
 
-
-
     # Set default value, can be a callable
     attr_writer :default
 
