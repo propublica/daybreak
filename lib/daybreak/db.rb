@@ -209,6 +209,9 @@ module Daybreak
     end
 
     # Lock the database for an exclusive commit across processes and threads
+    # @note This method performs an expensive locking over process boundaries.
+    #       If you want to synchronize only between threads, use #synchronize.
+    # @see #synchronize
     # @yield a block where every change to the database is synced
     # @yieldparam [DB] db
     # @return result of the block
@@ -227,7 +230,10 @@ module Daybreak
       end
     end
 
-    # Lock the database for an exclusive commit across threads only
+    # Synchronize access to the database from multiple threads
+    # @note Daybreak is not thread safe, if you want to access it from
+    #       multiple threads, all accesses have to be in the #synchronize block.
+    # @see #lock
     # @yield a block where every change to the database is synced
     # @yieldparam [DB] db
     # @return result of the block
