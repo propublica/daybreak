@@ -119,6 +119,7 @@ describe Daybreak::DB do
 
   it 'should allow for default values' do
     db = Daybreak::DB.new(DB_PATH, :default => 0)
+    assert_equal db.default(1), 0
     assert_equal db[1], 0
     assert db.include? '1'
     db[1] = 1
@@ -130,6 +131,7 @@ describe Daybreak::DB do
 
   it 'should handle default values that are procs' do
     db = Daybreak::DB.new(DB_PATH) {|key| set = Set.new; set << key }
+    assert db.default(:test).include? 'test'
     assert db['foo'].is_a? Set
     assert db.include? 'foo'
     assert db['bar'].include? 'bar'
@@ -189,7 +191,17 @@ describe Daybreak::DB do
 
   it 'should have threadsafe lock' do
     @db[1] = 0
-    inc = proc { 1000.times { @db.lock { @db[1] += 1 } } }
+    inc = proc { 1000.times { @db.lock {|d| d[1] += 1 } } }
+    a = Thread.new &inc
+    b = Thread.new &inc
+    a.join
+    b.join
+    assert_equal @db[1], 2000
+  end
+
+  it 'should have threadsafe synchronize' do
+    @db[1] = 0
+    inc = proc { 1000.times { @db.synchronize {|d| d[1] += 1 } } }
     a = Thread.new &inc
     b = Thread.new &inc
     a.join

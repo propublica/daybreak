@@ -258,6 +258,11 @@ $ gem install daybreak
     <span class="n">db</span><span class="o">[</span><span class="s1">&#39;counter&#39;</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
   <span class="k">end</span>
 
+  <span class="c1"># If you want to synchronize only between threads, prefer synchronize over lock!</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">synchronize</span> <span class="k">do</span>
+    <span class="n">db</span><span class="o">[</span><span class="s1">&#39;counter&#39;</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
+  <span class="k">end</span>
+
   <span class="c1"># DBs can have default values</span>
   <span class="n">db3</span> <span class="o">=</span> <span class="no">Daybreak</span><span class="o">::</span><span class="no">DB</span><span class="o">.</span><span class="n">new</span> <span class="s2">&quot;example3.db&quot;</span><span class="p">,</span> <span class="ss">:default</span> <span class="o">=&gt;</span> <span class="s1">&#39;hello!&#39;</span>
   <span class="n">db3</span><span class="o">[</span><span class="s1">&#39;bingo&#39;</span><span class="o">]</span> <span class="c1">#=&gt; hello!</span>
@@ -297,6 +302,12 @@ $ gem install daybreak
       done by calling <tt>sync</tt> or <tt>lock</tt>. <tt>sync</tt> updates the
       in memory hash table with new database records from the filesystem.
       Use <tt>lock</tt> if you want to make operations atomic across process boundaries.
+    </p>
+
+    <p>
+      If you only want to synchronize between different threads, prefer <tt>synchronize</tt> over <tt>lock</tt>.
+      Be aware that Daybreak is not thread-safe by default, so all (!) accesses have to be wrapped by <tt>synchronize</tt>
+      (This statement is true at least on interpreters without global interpreter lock (Rubinius, JRuby)).
     </p>
 
     <p>

@@ -14,12 +14,15 @@ module Daybreak
     # Set default value, can be a callable
     attr_writer :default
 
+    # @private
     @@databases = []
+
+    # @private
     @@databases_mutex = Mutex.new
 
     # A handler that will ensure that databases are closed and synced when the
     # current process exits.
-    # @api private
+    # @private
     def self.exit_handler
       loop do
         db = @@databases_mutex.synchronize { @@databases.first }
@@ -39,8 +42,10 @@ module Daybreak
     # to store when accessing a previously unset key, this follows the
     # Hash standard.
     # @param [String] file the path to the db file
-    # @param [Hash] options a hash that contains the options for creating a new
-    #  database. You can pass in :serializer, :format or :default.
+    # @param [Hash] options a hash that contains the options for creating a new database
+    # @option options [Class] :serializer Serializer class
+    # @option options [Class] :format Format class
+    # @option options [Object] :default Default value
     # @yield [key] a block that will return the default value to store.
     # @yieldparam [String] key the key to be stored.
     def initialize(file, options = {}, &block)
@@ -51,7 +56,7 @@ module Daybreak
       @table = Hash.new(&method(:hash_default))
       @default = block ? block : options[:default]
       open
-      @mutex = Mutex.new # Mutex to make #lock thread safe
+      @mutex = Mutex.new # Mutex used by #synchronize and #lock
       @worker = Thread.new(&method(:worker))
       @worker.priority = -1
       load
@@ -59,34 +64,38 @@ module Daybreak
     end
 
     # Return default value belonging to key
-    # @param key the default value to retrieve.
+    # @param [Object] key the default value to retrieve.
+    # @return [Object] value the default value
     def default(key = nil)
-      @table.default(key)
+      @table.default(@serializer.key_for(key))
     end
 
     # Retrieve a value at key from the database. If the default value was specified
     # when this database was created, that value will be set and returned. Aliased
     # as <tt>get</tt>.
-    # @param key the value to retrieve from the database.
+    # @param [Object] key the value to retrieve from the database.
+    # @return [Object] the value
     def [](key)
       @table[@serializer.key_for(key)]
     end
-    alias_method :get, :'[]'
+    alias_method :get, '[]'
 
     # Set a key in the database to be written at some future date. If the data
     # needs to be persisted immediately, call <tt>db.set(key, value, true)</tt>.
-    # @param [#to_s] key the key of the storage slot in the database
-    # @param value the value to store
+    # @param [Object] key the key of the storage slot in the database
+    # @param [Object] value the value to store
+    # @return [Object] the value
     def []=(key, value)
       key = @serializer.key_for(key)
       @queue << [key, value]
       @table[key] = value
     end
-    alias_method :set, :'[]='
+    alias_method :set, '[]='
 
     # set! flushes data immediately to disk.
-    # @param key the key of the storage slot in the database
-    # @param value the value to store
+    # @param [Object] key the key of the storage slot in the database
+    # @param [Object] value the value to store
+    # @return [Object] the value
     def set!(key, value)
       set(key, value)
       flush
@@ -94,7 +103,8 @@ module Daybreak
     end
 
     # Delete a key from the database
-    # @param key the key of the storage slot in the database
+    # @param [Object] key the key of the storage slot in the database
+    # @return [Object] the value
     def delete(key)
       key = @serializer.key_for(key)
       @queue << [key]
@@ -102,7 +112,8 @@ module Daybreak
     end
 
     # Immediately delete the key on disk.
-    # @param key the key of the storage slot in the database
+    # @param [Object] key the key of the storage slot in the database
+    # @return [Object] the value
     def delete!(key)
       value = delete(key)
       flush
@@ -110,6 +121,8 @@ module Daybreak
     end
 
     # Update database with hash (Fast batch update)
+    # @param [Hash] hash the key/value hash
+    # @return [DB] self
     def update(hash)
       shash = {}
       hash.each do |key, value|
@@ -121,13 +134,16 @@ module Daybreak
     end
 
     # Updata database and flush data to disk.
+    # @param [Hash] hash the key/value hash
+    # @return [DB] self
     def update!(hash)
       update(hash)
       flush
     end
 
-    # Does this db have a value for this key?
-    # @param key the key to check if the DB has a key.
+    # Does this db have this key?
+    # @param [Object] key the key to check if the DB has it
+    # @return [Boolean]
     def has_key?(key)
       @table.has_key?(@serializer.key_for(key))
     end
@@ -135,13 +151,16 @@ module Daybreak
     alias_method :include?, :has_key?
     alias_method :member?, :has_key?
 
+    # Does this db have this value?
+    # @param [Object] value the value to check if the DB has it
+    # @return [Boolean]
     def has_value?(value)
       @table.has_value?(value)
     end
     alias_method :value?, :has_value?
 
     # Return the number of stored items.
-    # @return [Integer]
+    # @return [Fixnum]
     def size
       @table.size
     end
@@ -149,8 +168,9 @@ module Daybreak
 
     # Utility method that will return the size of the database in bytes,
     # useful for determining when to compact
+    # @return [Fixnum]
     def bytesize
-      @fd.stat.size unless closed?
+      @fd.size
     end
 
     # Return true if database is empty.
@@ -168,12 +188,13 @@ module Daybreak
     end
 
     # Return the keys in the db.
-    # @return [Array]
+    # @return [Array<String>]
     def keys
       @table.keys
     end
 
     # Flush all changes to disk.
+    # @return [DB] self
     def flush
       @queue.flush
       self
@@ -181,13 +202,19 @@ module Daybreak
 
     # Sync the database with what is on disk, by first flushing changes, and
     # then reading the file if necessary.
+    # @return [DB] self
     def sync
       flush
       load
     end
 
-    # Lock the database for an exclusive commit accross processes and threads
+    # Lock the database for an exclusive commit across processes and threads
+    # @note This method performs an expensive locking over process boundaries.
+    #       If you want to synchronize only between threads, use #synchronize.
+    # @see #synchronize
     # @yield a block where every change to the database is synced
+    # @yieldparam [DB] db
+    # @return result of the block
     def lock
       @mutex.synchronize do
         # Flush everything to start with a clean state
@@ -196,14 +223,26 @@ module Daybreak
 
         with_flock(File::LOCK_EX) do
           load
-          result = yield
+          result = yield(self)
           flush
           result
         end
       end
     end
 
+    # Synchronize access to the database from multiple threads
+    # @note Daybreak is not thread safe, if you want to access it from
+    #       multiple threads, all accesses have to be in the #synchronize block.
+    # @see #lock
+    # @yield a block where every change to the database is synced
+    # @yieldparam [DB] db
+    # @return result of the block
+    def synchronize
+      @mutex.synchronize { yield(self) }
+    end
+
     # Remove all keys and values from the database.
+    # @return [DB] self
     def clear
       flush
       with_tmpfile do |path, file|
@@ -218,6 +257,7 @@ module Daybreak
     end
 
     # Compact the database to remove stale commits and reduce the file size.
+    # @return [DB] self
     def compact
       sync
       with_tmpfile do |path, file|
@@ -238,6 +278,7 @@ module Daybreak
     end
 
     # Close the database for reading and writing.
+    # @return nil
     def close
       @queue << nil
       @worker.join
@@ -248,13 +289,14 @@ module Daybreak
     end
 
     # Check to see if we've already closed the database.
+    # @return [Boolean]
     def closed?
       @fd.closed?
     end
 
     private
 
-    # The block used in @table for new entries
+    # The block used in @table for new records
     def hash_default(_, key)
       if @default != nil
         value = @default.respond_to?(:call) ? @default.call(key) : @default

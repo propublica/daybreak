@@ -24,10 +24,7 @@ end
 
 desc "Publish the docs to gh-pages"
 task :publish do |t|
-  `git checkout gh-pages`
-  `git merge master`
-  `git push`
-  `git checkout master`
+  system('git push origin master:gh-pages')
 end
 
 task :default => :test
