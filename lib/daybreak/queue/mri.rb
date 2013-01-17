@@ -28,7 +28,7 @@ module Daybreak
       end
     end
 
-    def next
+    def first
       while @queue.empty?
         begin
           @full << Thread.current

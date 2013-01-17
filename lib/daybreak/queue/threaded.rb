@@ -23,7 +23,7 @@ module Daybreak
       end
     end
 
-    def next
+    def first
       @mutex.synchronize do
         @full.wait(@mutex) while @queue.empty?
         @queue.first

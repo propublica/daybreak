@@ -138,7 +138,7 @@ module Daybreak
     # Worker thread
     def worker
       loop do
-        case record = self.next
+        case record = first
         when Hash
           write_batch(record)
         when nil
