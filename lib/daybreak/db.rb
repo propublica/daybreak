@@ -56,7 +56,7 @@ module Daybreak
       @table = Hash.new(&method(:hash_default))
       @default = block ? block : options[:default]
       open
-      @mutex = Mutex.new # Mutex to make #lock thread safe
+      @mutex = Mutex.new # Mutex used by #synchronize and #lock
       @worker = Thread.new(&method(:worker))
       @worker.priority = -1
       load
@@ -208,7 +208,7 @@ module Daybreak
       load
     end
 
-    # Lock the database for an exclusive commit accross processes and threads
+    # Lock the database for an exclusive commit across processes and threads
     # @yield a block where every change to the database is synced
     # @yieldparam [DB] self
     # @return result of the block
@@ -225,6 +225,14 @@ module Daybreak
           result
         end
       end
+    end
+
+    # Lock the database for an exclusive commit across threads only
+    # @yield a block where every change to the database is synced
+    # @yieldparam [DB] self
+    # @return result of the block
+    def synchronize
+      @mutex.synchronize { yield(self) }
     end
 
     # Remove all keys and values from the database.
@@ -282,7 +290,7 @@ module Daybreak
 
     private
 
-    # The block used in @table for new entries
+    # The block used in @table for new records
     def hash_default(_, key)
       if @default != nil
         value = @default.respond_to?(:call) ? @default.call(key) : @default

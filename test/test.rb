@@ -199,6 +199,16 @@ describe Daybreak::DB do
     assert_equal @db[1], 2000
   end
 
+  it 'should have threadsafe synchronize' do
+    @db[1] = 0
+    inc = proc { 1000.times { @db.synchronize {|d| d[1] += 1 } } }
+    a = Thread.new &inc
+    b = Thread.new &inc
+    a.join
+    b.join
+    assert_equal @db[1], 2000
+  end
+
   it 'should synchronize across processes' do
     @db[1] = 0
     @db.flush
