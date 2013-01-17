@@ -47,16 +47,15 @@ module Daybreak
 
     # Lock the logfile across thread and process boundaries
     def lock
-        # Flush everything to start with a clean state
-        # and to protect the @locked variable
-        flush
+      # Flush everything to start with a clean state
+      # and to protect the @locked variable
+      flush
 
-        with_flock(File::LOCK_EX) do
-          load
-          result = yield
-          flush
-          result
-        end
+      with_flock(File::LOCK_EX) do
+        load
+        result = yield
+        flush
+        result
       end
     end
 
@@ -96,8 +95,7 @@ module Daybreak
     def load
       buf = read
       until buf.empty?
-        record = @format.parse(buf)
-        @emit.call(record)
+        @emit.call(@format.parse(buf))
         @logsize += 1
       end
     end
