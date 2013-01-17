@@ -5,9 +5,6 @@ module Daybreak
   class DB
     include Enumerable
 
-    # Database file name
-    attr_reader :file
-
     # Set default value, can be a callable
     attr_writer :default
 
@@ -22,12 +19,17 @@ module Daybreak
     # @yield [key] a block that will return the default value to store.
     # @yieldparam [String] key the key to be stored.
     def initialize(file, options = {}, &block)
-      @file = file
       @serializer = (options[:serializer] || Serializer::Default).new
       @table = Hash.new &method(:hash_default)
-      @journal = Journal.new @file, (options[:format] || Format).new, @serializer, &method(:fill)
+      @journal = Journal.new(file, (options[:format] || Format).new, @serializer, &method(:fill))
       @default = block ? block : options[:default]
+      @mutex = Mutex.new # Mutex used by #synchronize and #lock
       @@databases_mutex.synchronize { @@databases << self }
+    end
+
+    # Database file name
+    def file
+      @journal.file
     end
 
     # Return default value belonging to key
@@ -137,7 +139,7 @@ module Daybreak
     # useful for determining when to compact
     # @return [Fixnum]
     def bytesize
-      @journal.size
+      @journal.bytesize
     end
 
     # Counter of how many records are in the log
@@ -190,7 +192,9 @@ module Daybreak
     # @yieldparam [DB] db
     # @return result of the block
     def lock
-      @journal.lock { yield self }
+      @mutex.synchronize do
+        @journal.lock { yield self }
+      end
     end
 
     # Synchronize access to the database from multiple threads
@@ -201,13 +205,14 @@ module Daybreak
     # @yieldparam [DB] db
     # @return result of the block
     def synchronize
-      @journal.synchronize { yield self }
+      @mutex.synchronize { yield self }
     end
 
     # Remove all keys and values from the database.
     # @return [DB] self
     def clear
-      @journal.clear { @table.clear }
+      @table.clear
+      @journal.clear
       self
     end
 
@@ -232,6 +237,8 @@ module Daybreak
       @journal.closed?
     end
 
+    private
+
     # @private
     @@databases = []
 
@@ -255,8 +262,6 @@ module Daybreak
     end
 
     at_exit { Daybreak::DB.exit_handler }
-
-    private
 
     # The block used in @table for new records
     def hash_default(_, key)

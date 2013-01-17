@@ -1,9 +1,9 @@
 module Daybreak
   # Daybreak::Journal handles background io, compaction and is the arbiter
-  # of thread and multiprocess safety
+  # of multiprocess safety
   # @api private
   class Journal
-    attr_reader :logsize
+    attr_reader :logsize, :file
 
     def initialize(file, format, serializer, &blk)
       @file = file
@@ -11,7 +11,6 @@ module Daybreak
       @serializer = serializer
       @queue = Queue.new
       @callback = blk
-      @mutex = Mutex.new # Mutex used by #synchronize and #lock
       open
       @worker = Thread.new(&method(:worker))
       @worker.priority = -1
@@ -48,7 +47,6 @@ module Daybreak
 
     # Lock the logfile across thread and process boundaries
     def lock
-      @mutex.synchronize do
         # Flush everything to start with a clean state
         # and to protect the @locked variable
         flush
@@ -71,12 +69,7 @@ module Daybreak
         # Clear acts like a compactification
         File.rename(path, @file)
       end
-      yield
       open
-    end
-
-    def synchronize(&blk)
-      @mutex.synchronize &blk
     end
 
     # Compact the logfile to represent the in-memory state
@@ -109,7 +102,7 @@ module Daybreak
       end
     end
 
-    def size
+    def bytesize
       @fd.size
     end
 
