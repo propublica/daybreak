@@ -150,10 +150,10 @@ module Daybreak
       @journal.bytesize
     end
 
-    # Counter of how many records are in the log
+    # Counter of how many records are in the journal
     # @return [Fixnum]
     def logsize
-      @journal.logsize
+      @journal.size
     end
 
     # Return true if database is empty.

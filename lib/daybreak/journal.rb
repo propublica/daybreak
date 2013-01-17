@@ -3,7 +3,7 @@ module Daybreak
   # of multiprocess safety
   # @api private
   class Journal < Queue
-    attr_reader :logsize, :file
+    attr_reader :size, :file
 
     def initialize(file, format, serializer, &block)
       super()
@@ -91,13 +91,13 @@ module Daybreak
     # Emit records as we parse them
     def replay
       unless @pos
-        @logsize = 0
+        @size = 0
         @emit.call(nil)
       end
       buf = read
       until buf.empty?
         @emit.call(@format.parse(buf))
-        @logsize += 1
+        @size += 1
       end
     end
 
@@ -145,7 +145,7 @@ module Daybreak
         when Hash
           # Write batch update
           write(dump(record))
-          @logsize += record.size
+          @size += record.size
         when nil
           pop
           break
@@ -153,7 +153,7 @@ module Daybreak
           # Write single record
           record[1] = @serializer.dump(record.last) if record.size > 1
           write(@format.dump(record))
-          @logsize += 1
+          @size += 1
         end
         pop
       end
