@@ -133,31 +133,23 @@ module Daybreak
       loop do
         case record = first
         when Hash
-          write_batch(record)
+          # Write batch update
+          write(dump(record))
+          @logsize += record.size
         when nil
           pop
           break
         else
-          write_record(record)
+          # Write single record
+          record[1] = @serializer.dump(record.last) if record.size > 1
+          write(@format.dump(record))
+          @logsize += 1
         end
         pop
       end
     rescue Exception => ex
       warn "Daybreak worker: #{ex.message}"
       retry
-    end
-
-    # Write batch update
-    def write_batch(records)
-      write(dump(records))
-      @logsize += records.size
-    end
-
-    # Write single record
-    def write_record(record)
-      record[1] = @serializer.dump(record.last) if record.size > 1
-      write(@format.dump(record))
-      @logsize += 1
     end
 
     # Write data to output stream and advance @pos
