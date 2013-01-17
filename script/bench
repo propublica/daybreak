@@ -56,12 +56,12 @@ def report(samples)
   puts '95%% < %.4f ms' % samples.slice((samples.length * 0.95).to_i)
 end
 
-begin
-  require 'dbm'
-  run DBM.new(DB_PATH + '.dbm')
-rescue Exception => ex
-  puts "DBM not benchmarked: #{ex.message}"
-end
+# begin
+#   require 'dbm'
+#   run DBM.new(DB_PATH + '.dbm')
+# rescue Exception => ex
+#   puts "DBM not benchmarked: #{ex.message}"
+# end
 
 begin
   require 'gdbm'
@@ -85,14 +85,14 @@ run db, 'with lock' do
 end
 
 db = Daybreak::DB.new DB_PATH
-run db, 'with sync' do
+run db, 'with load' do
   DATA.each do |i|
     db[i] = i
-    db.sync
+    db.sunrise
   end
   DATA.each do |i|
     $errors += 1 unless db[i] == i
-    db.sync
+    db.sunrise
   end
 end
 
