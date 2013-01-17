@@ -210,7 +210,7 @@ module Daybreak
 
     # Lock the database for an exclusive commit across processes and threads
     # @yield a block where every change to the database is synced
-    # @yieldparam [DB] self
+    # @yieldparam [DB] db
     # @return result of the block
     def lock
       @mutex.synchronize do
@@ -229,7 +229,7 @@ module Daybreak
 
     # Lock the database for an exclusive commit across threads only
     # @yield a block where every change to the database is synced
-    # @yieldparam [DB] self
+    # @yieldparam [DB] db
     # @return result of the block
     def synchronize
       @mutex.synchronize { yield(self) }
