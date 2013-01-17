@@ -1,5 +1,7 @@
 module Daybreak
   class FileHandler
+    attr_reader :logsize
+
     def initialize(file, format, serializer, &blk)
       @file = file
       @format = format
@@ -133,7 +135,7 @@ module Daybreak
 
     # Return database dump as string
     def dump(records, prefix = '')
-      dump = ''
+      dump = prefix
       # each is faster than inject
       records.each do |record|
         record[1] = @serializer.dump(record.last)

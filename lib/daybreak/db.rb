@@ -8,8 +8,7 @@ module Daybreak
     # Database file name
     attr_reader :file
 
-    # Counter of how many records are in
-    attr_reader :logsize
+
 
     # Set default value, can be a callable
     attr_writer :default
@@ -140,7 +139,13 @@ module Daybreak
     # useful for determining when to compact
     # @return [Fixnum]
     def bytesize
-      @fd.size
+      @handler.size
+    end
+
+    # Counter of how many records are in the log
+    # @return [Fixnum]
+    def logsize
+      @handler.logsize
     end
 
     # Return true if database is empty.
@@ -212,6 +217,7 @@ module Daybreak
     # @return [DB] self
     def compact
       @handler.compact(@table)
+      self
     end
 
     # Close the database for reading and writing.
