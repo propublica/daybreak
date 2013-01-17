@@ -56,12 +56,12 @@ def report(samples)
   puts '95%% < %.4f ms' % samples.slice((samples.length * 0.95).to_i)
 end
 
-# begin
-#   require 'dbm'
-#   run DBM.new(DB_PATH + '.dbm')
-# rescue Exception => ex
-#   puts "DBM not benchmarked: #{ex.message}"
-# end
+begin
+  require 'dbm'
+  run DBM.new(DB_PATH + '.dbm')
+rescue Exception => ex
+  puts "DBM not benchmarked: #{ex.message}"
+end
 
 begin
   require 'gdbm'
