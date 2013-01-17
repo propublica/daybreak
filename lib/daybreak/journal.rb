@@ -63,11 +63,11 @@ module Daybreak
     end
 
     # Compact the logfile to represent the in-memory state
-    def compact(records)
+    def compact
       load
       with_tmpfile do |path, file|
         # Compactified database has the same size -> return
-        return self if @pos == file.write(dump(records, @format.header))
+        return self if @pos == file.write(dump(yield, @format.header))
         with_flock(File::LOCK_EX) do
           # Database was replaced (cleared or compactified) in the meantime
           if @pos != nil

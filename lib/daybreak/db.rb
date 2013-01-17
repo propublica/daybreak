@@ -225,7 +225,7 @@ module Daybreak
     # Compact the database to remove stale commits and reduce the file size.
     # @return [DB] self
     def compact
-      @journal.compact(@table)
+      @journal.compact { @table }
       self
     end
 
