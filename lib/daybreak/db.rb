@@ -198,7 +198,6 @@ module Daybreak
     # @return result of the block
     def lock
       @mutex.synchronize { @journal.lock { yield self } }
-      end
     end
 
     # Synchronize access to the database from multiple threads
