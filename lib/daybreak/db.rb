@@ -36,6 +36,7 @@ module Daybreak
     end
 
     # Database file name
+    # @return [String] database file name
     def file
       @journal.file
     end
