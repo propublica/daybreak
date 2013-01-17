@@ -64,7 +64,7 @@ describe Daybreak::DB do
   it 'should persist after compact' do
     @db['1'] = 'xy'
     @db['1'] = 'z'
-    assert_equal @db.compact, @db
+    assert_equal @db.compact(:force => true), @db
     @db['1'] = '4'
     @db['4'] = '1'
     assert_equal @db.close, nil
@@ -79,7 +79,7 @@ describe Daybreak::DB do
 
     @db['1'] = 'xy'
     @db['1'] = 'z'
-    assert_equal @db.compact, @db
+    assert_equal @db.compact(:force => true), @db
     @db['1'] = '4'
     @db['4'] = '1'
     assert_equal @db.flush, @db
@@ -112,7 +112,7 @@ describe Daybreak::DB do
     @db.sync
 
     size = File.stat(DB_PATH).size
-    @db.compact
+    @db.compact(:force => true)
     assert_equal @db[1], 1
     assert size > File.stat(DB_PATH).size
   end
@@ -154,7 +154,7 @@ describe Daybreak::DB do
     @db.lock { 20.times {|i| @db[i] = i } }
     db2 = Daybreak::DB.new DB_PATH
     @db.lock { 20.times {|i| @db[i] = i } }
-    @db.compact
+    @db.compact(:force => true)
     db2.sync
     assert_equal 19, db2['19']
     db2.close
@@ -293,12 +293,12 @@ describe Daybreak::DB do
     end
     c = Thread.new do
       db = Daybreak::DB.new DB_PATH
-      db.compact until stop
+      db.compact(:force => true) until stop
       db.close
     end
     d = Thread.new do
       db = Daybreak::DB.new DB_PATH
-      db.compact until stop
+      db.compact(:force => true) until stop
       db.close
     end
     stop = true
@@ -318,7 +318,7 @@ describe Daybreak::DB do
     @db[1] = 2
     @db.lock do
       @db[1] = 2
-      @db.compact
+      @db.compact(:force => true)
     end
   end
 

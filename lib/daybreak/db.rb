@@ -244,8 +244,9 @@ module Daybreak
 
     # Compact the database to remove stale commits and reduce the file size.
     # @return [DB] self
-    def compact
+    def compact(options = {})
       sync
+      return self unless compact_needed?(options)
       with_tmpfile do |path, file|
         # Compactified database has the same size -> return
         return self if @pos == file.write(dump)
@@ -282,7 +283,15 @@ module Daybreak
 
     private
 
-    # The block used in @table for new entries
+    def compact_needed?(options)
+      return true if options[:force]
+      options[:ratio] ||= 2 # Two log records per table record
+      options[:reduction] ||= 4096 # One filesystem block, otherwise we won't gain
+      logsize > options[:ratio] * size || # Log size vs table size ratio
+        bytesize - (bytesize * size / logsize) > options[:reduction] # Estimate log size reduction
+    end
+
+    # The block used in @table for new records
     def hash_default(_, key)
       if @default != nil
         value = @default.respond_to?(:call) ? @default.call(key) : @default
