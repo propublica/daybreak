@@ -49,7 +49,9 @@ module Daybreak
         file.write(@format.header)
         file.close
         # Clear acts like a compactification
-        File.rename(path, @file)
+        with_flock(File::LOCK_EX) do
+          File.rename(path, @file)
+        end
       end
       open
     end
