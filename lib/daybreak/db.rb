@@ -31,6 +31,7 @@ module Daybreak
       @default = block ? block : options[:default]
       @mutex = Mutex.new # Mutex used by #synchronize and #lock
       @@databases_mutex.synchronize { @@databases << self }
+      @journal.replay
     end
 
     # Database file name
@@ -184,10 +185,12 @@ module Daybreak
     # Sync the database with what is on disk, by first flushing changes, and
     # then loading the new records if necessary.
     # @return [DB] self
-    def sync
-      @journal.sync
+    def load
+      @journal.flush
+      @journal.replay
       self
     end
+    alias_method :sunrise, :load
 
     # Lock the database for an exclusive commit across processes and threads
     # @note This method performs an expensive locking over process boundaries.

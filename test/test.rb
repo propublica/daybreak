@@ -31,7 +31,7 @@ describe Daybreak::DB do
   it 'should persist values' do
     @db['1'] = '4'
     @db['4'] = '1'
-    assert_equal @db.sync, @db
+    assert_equal @db.sunrise, @db
 
     assert_equal @db['1'], '4'
     db2 = Daybreak::DB.new DB_PATH
@@ -84,7 +84,7 @@ describe Daybreak::DB do
     @db['4'] = '1'
     assert_equal @db.flush, @db
 
-    db.sync
+    db.sunrise
     assert_equal db['1'], '4'
     assert_equal db['4'], '1'
     db.close
@@ -100,7 +100,7 @@ describe Daybreak::DB do
     @db['4'] = '1'
     @db.flush
 
-    db.sync
+    db.sunrise
     assert_equal db['1'], '4'
     assert_equal db['4'], '1'
     db.close
@@ -109,7 +109,7 @@ describe Daybreak::DB do
   it 'should compact cleanly' do
     @db[1] = 1
     @db[1] = 1
-    @db.sync
+    @db.sunrise
 
     size = File.stat(DB_PATH).size
     @db.compact
@@ -145,7 +145,7 @@ describe Daybreak::DB do
     @db.set! '1', 4
     db2 = Daybreak::DB.new DB_PATH
     db2.set! '1', 5
-    @db.sync
+    @db.sunrise
     assert_equal @db['1'], 5
     db2.close
   end
@@ -155,7 +155,7 @@ describe Daybreak::DB do
     db2 = Daybreak::DB.new DB_PATH
     @db.lock { 20.times {|i| @db[i] = i } }
     @db.compact
-    db2.sync
+    db2.sunrise
     assert_equal 19, db2['19']
     db2.close
   end

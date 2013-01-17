@@ -14,17 +14,10 @@ module Daybreak
       open
       @worker = Thread.new(&method(:worker))
       @worker.priority = -1
-      load
     end
 
     def closed?
       @fd.closed?
-    end
-
-    # Sync queued commits and read new commits from the log file
-    def sync
-      flush
-      load
     end
 
     # Clear the queue and close the file handler
@@ -42,7 +35,7 @@ module Daybreak
       flush
 
       with_flock(File::LOCK_EX) do
-        load
+        replay
         result = yield
         flush
         result
@@ -63,7 +56,8 @@ module Daybreak
 
     # Compact the logfile to represent the in-memory state
     def compact(records)
-      sync
+      flush
+      replay
       with_tmpfile do |path, file|
         # Compactified database has the same size -> return
         return self if @pos == file.write(dump(records, @format.header))
@@ -78,11 +72,20 @@ module Daybreak
         end
       end
       open
-      load
+      replay
     end
 
     def bytesize
       @fd.stat.size
+    end
+
+    # Emit records as we parse them
+    def replay
+      buf = read
+      until buf.empty?
+        @emit.call(@format.parse(buf))
+        @logsize += 1
+      end
     end
 
     private
@@ -97,15 +100,6 @@ module Daybreak
       @logsize = 0
       write(@format.header) if stat.size == 0
       @pos = nil
-    end
-
-    # Emit records as we parse them
-    def load
-      buf = read
-      until buf.empty?
-        @emit.call(@format.parse(buf))
-        @logsize += 1
-      end
     end
 
     # Read new file content
