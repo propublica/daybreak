@@ -270,7 +270,9 @@ module Daybreak
     end
 
     # receive records from @handler
-    def fill(record)
+    def fill(*record)
+      # 1.8.7 sends an array 1 level deep and 1.9.3 sends one 2 levels
+      record.flatten!
       if record.size == 1
         @table.delete(record.first)
       else
