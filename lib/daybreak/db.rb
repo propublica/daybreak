@@ -182,11 +182,10 @@ module Daybreak
     end
 
     # Sync the database with what is on disk, by first flushing changes, and
-    # then reading the file if necessary.
+    # then loading the new records if necessary.
     # @return [DB] self
     def sync
-      @journal.flush
-      @journal.load
+      @journal.sync
       self
     end
 
