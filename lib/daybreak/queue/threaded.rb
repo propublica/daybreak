@@ -23,7 +23,7 @@ module Daybreak
       end
     end
 
-    def next
+    def first
       @mutex.synchronize do
         @full.wait(@mutex) while @queue.empty?
         @queue.first
@@ -34,6 +34,9 @@ module Daybreak
       @mutex.synchronize do
         @empty.wait(@mutex) until @queue.empty?
       end
+    end
+
+    def close
     end
   end
 end

@@ -5,38 +5,8 @@ module Daybreak
   class DB
     include Enumerable
 
-    # Database file name
-    attr_reader :file
-
-    # Counter of how many records are in
-    attr_reader :logsize
-
     # Set default value, can be a callable
     attr_writer :default
-
-    # @private
-    @@databases = []
-
-    # @private
-    @@databases_mutex = Mutex.new
-
-    # A handler that will ensure that databases are closed and synced when the
-    # current process exits.
-    # @private
-    def self.exit_handler
-      loop do
-        db = @@databases_mutex.synchronize { @@databases.first }
-        break unless db
-        warn "Daybreak database #{db.file} was not closed, state might be inconsistent"
-        begin
-          db.close
-        rescue Exception => ex
-          warn "Failed to close daybreak database: #{ex.message}"
-        end
-      end
-    end
-
-   at_exit { Daybreak::DB.exit_handler }
 
     # Create a new Daybreak::DB. The second argument is the default value
     # to store when accessing a previously unset key, this follows the
@@ -49,18 +19,26 @@ module Daybreak
     # @yield [key] a block that will return the default value to store.
     # @yieldparam [String] key the key to be stored.
     def initialize(file, options = {}, &block)
-      @file = file
       @serializer = (options[:serializer] || Serializer::Default).new
-      @format = (options[:format] || Format).new
-      @queue = Queue.new
-      @table = Hash.new(&method(:hash_default))
+      @table = Hash.new &method(:hash_default)
+      @journal = Journal.new(file, (options[:format] || Format).new, @serializer) do |record|
+        if !record
+          @table.clear
+        elsif record.size == 1
+          @table.delete(record.first)
+        else
+          @table[record.first] = @serializer.load(record.last)
+        end
+      end
       @default = block ? block : options[:default]
-      open
       @mutex = Mutex.new # Mutex used by #synchronize and #lock
-      @worker = Thread.new(&method(:worker))
-      @worker.priority = -1
-      load
       @@databases_mutex.synchronize { @@databases << self }
+    end
+
+    # Database file name
+    # @return [String] database file name
+    def file
+      @journal.file
     end
 
     # Return default value belonging to key
@@ -87,7 +65,7 @@ module Daybreak
     # @return [Object] the value
     def []=(key, value)
       key = @serializer.key_for(key)
-      @queue << [key, value]
+      @journal << [key, value]
       @table[key] = value
     end
     alias_method :set, '[]='
@@ -107,7 +85,7 @@ module Daybreak
     # @return [Object] the value
     def delete(key)
       key = @serializer.key_for(key)
-      @queue << [key]
+      @journal << [key]
       @table.delete(key)
     end
 
@@ -128,7 +106,7 @@ module Daybreak
       hash.each do |key, value|
         shash[@serializer.key_for(key)] = value
       end
-      @queue << shash
+      @journal << shash
       @table.update(shash)
       self
     end
@@ -138,7 +116,7 @@ module Daybreak
     # @return [DB] self
     def update!(hash)
       update(hash)
-      flush
+      @journal.flush
     end
 
     # Does this db have this key?
@@ -170,7 +148,13 @@ module Daybreak
     # useful for determining when to compact
     # @return [Fixnum]
     def bytesize
-      @fd.size
+      @journal.bytesize
+    end
+
+    # Counter of how many records are in the journal
+    # @return [Fixnum]
+    def logsize
+      @journal.size
     end
 
     # Return true if database is empty.
@@ -196,17 +180,18 @@ module Daybreak
     # Flush all changes to disk.
     # @return [DB] self
     def flush
-      @queue.flush
+      @journal.flush
       self
     end
 
     # Sync the database with what is on disk, by first flushing changes, and
-    # then reading the file if necessary.
+    # then loading the new records if necessary.
     # @return [DB] self
-    def sync
-      flush
-      load
+    def load
+      @journal.load
+      self
     end
+    alias_method :sunrise, :load
 
     # Lock the database for an exclusive commit across processes and threads
     # @note This method performs an expensive locking over process boundaries.
@@ -216,18 +201,7 @@ module Daybreak
     # @yieldparam [DB] db
     # @return result of the block
     def lock
-      @mutex.synchronize do
-        # Flush everything to start with a clean state
-        # and to protect the @locked variable
-        flush
-
-        with_flock(File::LOCK_EX) do
-          load
-          result = yield(self)
-          flush
-          result
-        end
-      end
+      @mutex.synchronize { @journal.lock { yield self } }
     end
 
     # Synchronize access to the database from multiple threads
@@ -238,52 +212,28 @@ module Daybreak
     # @yieldparam [DB] db
     # @return result of the block
     def synchronize
-      @mutex.synchronize { yield(self) }
+      @mutex.synchronize { yield self }
     end
 
     # Remove all keys and values from the database.
     # @return [DB] self
     def clear
-      flush
-      with_tmpfile do |path, file|
-        file.write(@format.header)
-        file.close
-        # Clear acts like a compactification
-        File.rename(path, @file)
-      end
       @table.clear
-      open
+      @journal.clear
       self
     end
 
     # Compact the database to remove stale commits and reduce the file size.
     # @return [DB] self
     def compact
-      sync
-      with_tmpfile do |path, file|
-        # Compactified database has the same size -> return
-        return self if @pos == file.write(dump)
-        with_flock(File::LOCK_EX) do
-          # Database was compactified in the meantime
-          if @pos != nil
-            # Append changed journal records if the database changed during compactification
-            file.write(read)
-            file.close
-            File.rename(path, @file)
-          end
-        end
-      end
-      open
-      load
+      @journal.compact { @table }
+      self
     end
 
     # Close the database for reading and writing.
     # @return nil
     def close
-      @queue << nil
-      @worker.join
-      @fd.close
-      @queue.stop if @queue.respond_to?(:stop)
+      @journal.close
       @@databases_mutex.synchronize { @@databases.delete(self) }
       nil
     end
@@ -291,151 +241,42 @@ module Daybreak
     # Check to see if we've already closed the database.
     # @return [Boolean]
     def closed?
-      @fd.closed?
+      @journal.closed?
     end
 
     private
+
+    # @private
+    @@databases = []
+
+    # @private
+    @@databases_mutex = Mutex.new
+
+    # A handler that will ensure that databases are closed and synced when the
+    # current process exits.
+    # @private
+    def self.exit_handler
+      loop do
+        db = @@databases_mutex.synchronize { @@databases.first }
+        break unless db
+        warn "Daybreak database #{db.file} was not closed, state might be inconsistent"
+        begin
+          db.close
+        rescue Exception => ex
+          warn "Failed to close daybreak database: #{ex.message}"
+        end
+      end
+    end
+
+    at_exit { Daybreak::DB.exit_handler }
 
     # The block used in @table for new records
     def hash_default(_, key)
       if @default != nil
         value = @default.respond_to?(:call) ? @default.call(key) : @default
-        @queue << [key, value]
+        @journal << [key, value]
         @table[key] = value
       end
-    end
-
-    # Update the @table with records
-    def load
-      buf = read
-      until buf.empty?
-        record = @format.parse(buf)
-        if record.size == 1
-          @table.delete(record.first)
-        else
-          @table[record.first] = @serializer.load(record.last)
-        end
-        @logsize += 1
-      end
-      self
-    end
-
-    # Open or reopen file
-    def open
-      @fd.close if @fd
-      @fd = File.open(@file, 'ab+')
-      @fd.advise(:sequential) if @fd.respond_to? :advise
-      stat = @fd.stat
-      @inode = stat.ino
-      @logsize = 0
-      write(@format.header) if stat.size == 0
-      @pos = nil
-    end
-
-    # Read new file content
-    def read
-      with_flock(File::LOCK_SH) do
-        # File was opened
-        unless @pos
-          @fd.pos = 0
-          @format.read_header(@fd)
-        else
-          @fd.pos = @pos
-        end
-        buf = @fd.read
-        @pos = @fd.pos
-        buf
-      end
-    end
-
-    # Return database dump as string
-    def dump
-      dump = @format.header
-      # each is faster than inject
-      @table.each do |record|
-        record[1] = @serializer.dump(record.last)
-        dump << @format.dump(record)
-      end
-      dump
-    end
-
-    # Worker thread
-    def worker
-      loop do
-        case record = @queue.next
-        when Hash
-          write_batch(record)
-        when nil
-          @queue.pop
-          break
-        else
-          write_record(record)
-        end
-        @queue.pop
-      end
-    rescue Exception => ex
-      warn "Daybreak worker: #{ex.message}"
-      retry
-    end
-
-    # Write batch update
-    def write_batch(records)
-      dump = ''
-      records.each do |record|
-        record[1] = @serializer.dump(record.last)
-        dump << @format.dump(record)
-      end
-      write(dump)
-      @logsize += records.size
-    end
-
-    # Write single record
-    def write_record(record)
-      record[1] = @serializer.dump(record.last) if record.size > 1
-      write(@format.dump(record))
-      @logsize += 1
-    end
-
-    # Write data to output stream and advance @pos
-    def write(dump)
-      with_flock(File::LOCK_EX) do
-        @fd.write(dump)
-        # Flush to make sure the file is really updated
-        @fd.flush
-      end
-      @pos = @fd.pos if @pos && @fd.pos == @pos + dump.bytesize
-    end
-
-    # Block with file lock
-    def with_flock(mode)
-      return yield if @locked
-      begin
-        loop do
-          # HACK: JRuby returns false if the process is already hold by the same process
-          # see https://github.com/jruby/jruby/issues/496
-          Thread.pass until @fd.flock(mode)
-          # Check if database was compactified in the meantime
-          # break if not
-          stat = @fd.stat
-          break if stat.nlink > 0 && stat.ino == @inode
-          open
-        end
-        @locked = true
-        yield
-      ensure
-        @fd.flock(File::LOCK_UN)
-        @locked = false
-      end
-    end
-
-    # Open temporary file and pass it to the block
-    def with_tmpfile
-      path = [@file, $$.to_s(36), Thread.current.object_id.to_s(36)].join
-      file = File.open(path, 'wb')
-      yield(path, file)
-    ensure
-      file.close unless file.closed?
-      File.unlink(path) if File.exists?(path)
     end
   end
 end

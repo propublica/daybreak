@@ -85,14 +85,14 @@ run db, 'with lock' do
 end
 
 db = Daybreak::DB.new DB_PATH
-run db, 'with sync' do
+run db, 'with load' do
   DATA.each do |i|
     db[i] = i
-    db.sync
+    db.sunrise
   end
   DATA.each do |i|
     $errors += 1 unless db[i] == i
-    db.sync
+    db.sunrise
   end
 end
 

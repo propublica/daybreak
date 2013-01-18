@@ -195,7 +195,7 @@
 $ gem install daybreak
 </pre>
 
-    <p>(v0.2.1) | <a href="http://rdoc.info/github/propublica/daybreak/master/frames">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
+    <p>(v0.2.2) | <a href="http://rdoc.info/github/propublica/daybreak/master/frames">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
 
     <h2>Overview</h2>
 
@@ -238,7 +238,7 @@ $ gem install daybreak
   <span class="n">db2</span><span class="o">.</span><span class="n">flush</span>
 
   <span class="c1"># Reread the changed file in the first db</span>
-  <span class="n">db</span><span class="o">.</span><span class="n">sync</span>
+  <span class="n">db</span><span class="o">.</span><span class="n">load</span>
   <span class="nb">p</span> <span class="n">db</span><span class="o">[</span><span class="s1">&#39;foo&#39;</span><span class="o">]</span> <span class="c1">#=&gt; 3</span>
   <span class="nb">p</span> <span class="n">db</span><span class="o">[</span><span class="s1">&#39;baz&#39;</span><span class="o">]</span> <span class="c1">#=&gt; {:one =&gt; 1}</span>
 
@@ -249,7 +249,7 @@ $ gem install daybreak
   <span class="c1"># Compaction is always a good idea. It will cut down on the size of the Database</span>
   <span class="n">db</span><span class="o">.</span><span class="n">compact</span>
   <span class="nb">p</span> <span class="n">db</span><span class="o">[</span><span class="s1">&#39;foo&#39;</span><span class="o">]</span> <span class="c1">#=&gt; 1</span>
-  <span class="n">db2</span><span class="o">.</span><span class="n">sync</span>
+  <span class="n">db2</span><span class="o">.</span><span class="n">load</span>
   <span class="nb">p</span> <span class="n">db2</span><span class="o">[</span><span class="s1">&#39;foo&#39;</span><span class="o">]</span> <span class="c1">#=&gt; 1</span>
 
   <span class="c1"># DBs can accessed from multiple processes at the same</span>
@@ -299,7 +299,7 @@ $ gem install daybreak
 
     <p>
       Daybreak is multi process safe. Synchronization with the other processes is
-      done by calling <tt>sync</tt> or <tt>lock</tt>. <tt>sync</tt> updates the
+      done by calling <tt>load</tt> or <tt>lock</tt>. <tt>load</tt> updates the
       in memory hash table with new database records from the filesystem.
       Use <tt>lock</tt> if you want to make operations atomic across process boundaries.
     </p>
@@ -378,6 +378,8 @@ $ gem install daybreak
     <h2>Change Log</h2>
 
     <dl>
+      <dd><b>0.2.2</b></dd>
+      <dt>Move file handling bits to <tt>Journal</tt>, and fix a bug with <tt>compact!</tt></dt>
       <dd><b>0.2.1</b></dd>
       <dt>Add bulk updates with <tt>update</tt> and it's friend <tt>update!</tt>.
         and add a subclass fix (thanks <a href="https://github.com/ch1c0t">ch1c0t</a>).</dt>

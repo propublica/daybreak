@@ -31,22 +31,22 @@ describe Daybreak::DB do
   it 'should persist values' do
     @db['1'] = '4'
     @db['4'] = '1'
-    assert_equal @db.sync, @db
+    assert_equal @db.sunrise, @db
 
     assert_equal @db['1'], '4'
-    db2 = Daybreak::DB.new DB_PATH
-    assert_equal db2['1'], '4'
-    assert_equal db2['4'], '1'
-    assert_equal db2.close, nil
+    db = Daybreak::DB.new DB_PATH
+    assert_equal db['1'], '4'
+    assert_equal db['4'], '1'
+    assert_equal db.close, nil
   end
 
   it 'should persist after batch update' do
     @db.update!(1 => :a, 2 => :b)
 
-    db2 = Daybreak::DB.new DB_PATH
-    assert_equal db2[1], :a
-    assert_equal db2[2], :b
-    assert_equal db2.close, nil
+    db = Daybreak::DB.new DB_PATH
+    assert_equal db[1], :a
+    assert_equal db[2], :b
+    assert_equal db.close, nil
   end
 
   it 'should persist after clear' do
@@ -84,7 +84,7 @@ describe Daybreak::DB do
     @db['4'] = '1'
     assert_equal @db.flush, @db
 
-    db.sync
+    db.sunrise
     assert_equal db['1'], '4'
     assert_equal db['4'], '1'
     db.close
@@ -100,7 +100,7 @@ describe Daybreak::DB do
     @db['4'] = '1'
     @db.flush
 
-    db.sync
+    db.sunrise
     assert_equal db['1'], '4'
     assert_equal db['4'], '1'
     db.close
@@ -109,7 +109,7 @@ describe Daybreak::DB do
   it 'should compact cleanly' do
     @db[1] = 1
     @db[1] = 1
-    @db.sync
+    @db.sunrise
 
     size = File.stat(DB_PATH).size
     @db.compact
@@ -143,42 +143,56 @@ describe Daybreak::DB do
 
   it 'should be able to sync competing writes' do
     @db.set! '1', 4
-    db2 = Daybreak::DB.new DB_PATH
-    db2.set! '1', 5
-    @db.sync
+    db = Daybreak::DB.new DB_PATH
+    db.set! '1', 5
+    @db.sunrise
     assert_equal @db['1'], 5
-    db2.close
+    db.close
   end
 
   it 'should be able to handle another process\'s call to compact' do
     @db.lock { 20.times {|i| @db[i] = i } }
-    db2 = Daybreak::DB.new DB_PATH
+    db = Daybreak::DB.new DB_PATH
     @db.lock { 20.times {|i| @db[i] = i } }
     @db.compact
-    db2.sync
-    assert_equal 19, db2['19']
-    db2.close
+    db.sunrise
+    assert_equal 19, db['19']
+    db.close
   end
 
   it 'can empty the database' do
     20.times {|i| @db[i] = i }
     @db.clear
-    db2 = Daybreak::DB.new DB_PATH
-    assert_equal nil, db2['19']
-    db2.close
+    db = Daybreak::DB.new DB_PATH
+    assert_equal nil, db['19']
+    db.close
   end
 
   it 'should handle deletions' do
-    @db[1] = 'one'
-    @db[2] = 'two'
+    @db['one'] = 1
+    @db['two'] = 2
     @db.delete! 'two'
     assert !@db.has_key?('two')
     assert_equal @db['two'], nil
 
-    db2 = Daybreak::DB.new DB_PATH
-    assert !db2.has_key?('two')
-    assert_equal db2['two'], nil
-    db2.close
+    db = Daybreak::DB.new DB_PATH
+    assert !db.has_key?('two')
+    assert_equal db['two'], nil
+    db.close
+  end
+
+  it 'should synchronize deletions after compact' do
+    @db['one'] = 1
+    @db['two'] = 2
+    @db.flush
+    db = Daybreak::DB.new DB_PATH
+    assert db.has_key?('two')
+    @db.delete! 'two'
+    @db.compact
+    db.sunrise
+    assert !db.has_key?('two')
+    assert_equal db['two'], nil
+    db.close
   end
 
   it 'should close and reopen the file when clearing the database' do
@@ -368,6 +382,10 @@ describe Daybreak::DB do
     assert_equal db.increment(1), 2
     db.clear
     db.close
+  end
+
+  it 'should report the bytesize' do
+    assert @db.bytesize > 0
   end
 
   after do
