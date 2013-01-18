@@ -247,7 +247,7 @@ $ gem install daybreak
   db2.flush
 
   # Reread the changed file in the first db
-  db.sync
+  db.load
   p db['foo'] #=> 3
   p db['baz'] #=> {:one => 1}
 
@@ -258,7 +258,7 @@ $ gem install daybreak
   # Compaction is always a good idea. It will cut down on the size of the Database
   db.compact
   p db['foo'] #=> 1
-  db2.sync
+  db2.load
   p db2['foo'] #=> 1
 
   # DBs can accessed from multiple processes at the same
@@ -308,7 +308,7 @@ RUBY
 
     <p>
       Daybreak is multi process safe. Synchronization with the other processes is
-      done by calling <tt>sync</tt> or <tt>lock</tt>. <tt>sync</tt> updates the
+      done by calling <tt>load</tt> or <tt>lock</tt>. <tt>load</tt> updates the
       in memory hash table with new database records from the filesystem.
       Use <tt>lock</tt> if you want to make operations atomic across process boundaries.
     </p>

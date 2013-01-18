@@ -14,6 +14,7 @@ module Daybreak
       load
     end
 
+    # Is the journal closed?
     def closed?
       @fd.closed?
     end
@@ -26,6 +27,7 @@ module Daybreak
       super
     end
 
+    # Load new journal entries
     def load
       flush
       replay
@@ -79,6 +81,7 @@ module Daybreak
       replay
     end
 
+    # Return byte size of journal
     def bytesize
       @fd.stat.size
     end
