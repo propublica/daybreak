@@ -392,6 +392,9 @@ describe Daybreak::DB do
   it 'should accept utf-8 keys' do
     @db['🌎'] = '🌎'
     @db.flush
+    db = Daybreak::DB.new DB_PATH
+    assert_equal db['🌎'], '🌎'
+    db.close
   end
 
   after do
