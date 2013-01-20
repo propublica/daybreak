@@ -1,4 +1,3 @@
-# encoding: utf-8
 require 'minitest/autorun'
 require 'minitest/benchmark'
 
@@ -387,11 +386,6 @@ describe Daybreak::DB do
 
   it 'should report the bytesize' do
     assert @db.bytesize > 0
-  end
-
-  it 'should accept utf-8 keys' do
-    @db['🌎'] = '🌎'
-    @db.flush
   end
 
   after do

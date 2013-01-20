@@ -8,9 +8,7 @@ module Daybreak
       # @param [Object] key
       # @return [String] key transformed to string
       def key_for(key)
-        key = key.to_s
-        key.force_encoding("BINARY") if key.respond_to? :force_encoding
-        key
+        key.to_s
       end
 
       # Serialize a value
