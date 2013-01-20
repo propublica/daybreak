@@ -4,11 +4,16 @@ module Daybreak
     # keys to strings and marshalls values
     # @api public
     class Default
+      def initialize
+        @encoding = Encoding.find('ASCII-8BIT') if defined? Encoding
+      end
       # Transform the key to a string
       # @param [Object] key
       # @return [String] key transformed to string
       def key_for(key)
-        key.to_s
+        key = key.to_s
+        key.force_encoding(@encoding) if @encoding && key.encoding != @encoding
+        key
       end
 
       # Serialize a value
