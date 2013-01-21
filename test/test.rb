@@ -22,6 +22,13 @@ describe Daybreak::DB do
     assert_equal @db.length, 1
   end
 
+  it 'should support frozen key' do
+    key = 'key'
+    key.freeze
+    @db[key] = 'value'
+    assert_equal @db[key], 'value'
+  end
+
   it 'should support batch inserts' do
     @db.update(1 => :a, 2 => :b)
     assert_equal @db[1], :a
