@@ -6,7 +6,10 @@ module Daybreak
       # (see Daybreak::Serializer::Default#key_for)
       if ''.respond_to? :force_encoding
         def key_for(key)
-          key.force_encoding(Encoding::BINARY)
+          if key.encoding != Encoding::BINARY
+            key = key.dup if key.frozen?
+            key.force_encoding(Encoding::BINARY)
+          end
           key
         end
       else
