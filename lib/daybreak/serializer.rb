@@ -1,19 +1,40 @@
 module Daybreak
   module Serializer
+    # Serializer which only encodes key in binary
+    # @api public
+    class None
+      # (see Daybreak::Serializer::Default#key_for)
+      if ''.respond_to? :force_encoding
+        def key_for(key)
+          key.force_encoding(Encoding::BINARY)
+          key
+        end
+      else
+        def key_for(key)
+          key
+        end
+      end
+
+      # (see Daybreak::Serializer::Default#dump)
+      def dump(value)
+        value
+      end
+
+      # (see Daybreak::Serializer::Default#load)
+      def load(value)
+        value
+      end
+    end
+
     # Default serializer which converts
     # keys to strings and marshalls values
     # @api public
-    class Default
-      def initialize
-        @encoding = Encoding.find('ASCII-8BIT') if defined? Encoding
-      end
+    class Default < None
       # Transform the key to a string
       # @param [Object] key
       # @return [String] key transformed to string
       def key_for(key)
-        key = key.to_s
-        key.force_encoding(@encoding) if @encoding && key.encoding != @encoding
-        key
+        super(key.to_s)
       end
 
       # Serialize a value
@@ -28,25 +49,6 @@ module Daybreak
       # @return [Object] deserialized value
       def load(value)
         Marshal.load(value)
-      end
-    end
-
-    # Serializer which does nothing
-    # @api public
-    class None
-      # (see Daybreak::Serializer::Default#key_for)
-      def key_for(key)
-        key
-      end
-
-      # (see Daybreak::Serializer::Default#dump)
-      def dump(value)
-        value
-      end
-
-      # (see Daybreak::Serializer::Default#load)
-      def load(value)
-        value
       end
     end
   end
