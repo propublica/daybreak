@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'minitest/autorun'
 require 'minitest/benchmark'
 
@@ -19,6 +20,13 @@ describe Daybreak::DB do
     @db[1] = '2'
     assert_equal @db[1], '2'
     assert_equal @db.length, 1
+  end
+
+  it 'should support frozen key' do
+    key = 'key'
+    key.freeze
+    @db[key] = 'value'
+    assert_equal @db[key], 'value'
   end
 
   it 'should support batch inserts' do
@@ -386,6 +394,14 @@ describe Daybreak::DB do
 
   it 'should report the bytesize' do
     assert @db.bytesize > 0
+  end
+
+  it 'should accept utf-8 keys' do
+    @db['🌎'] = '🌎'
+    @db.flush
+    db = Daybreak::DB.new DB_PATH
+    assert_equal db['🌎'], '🌎'
+    db.close
   end
 
   after do

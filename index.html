@@ -195,7 +195,7 @@
 $ gem install daybreak
 </pre>
 
-    <p>(v0.2.2) | <a href="http://rdoc.info/github/propublica/daybreak/master/frames">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
+    <p>(v0.2.3) | <a href="http://rdoc.info/github/propublica/daybreak/master/frames">API Docs</a> | <a href="http://github.com/propublica/daybreak/issues">Issue Tracker</a></p>
 
     <h2>Overview</h2>
 
@@ -373,11 +373,41 @@ $ gem install daybreak
       If you are interested in benchmarks, you can also take a look at the <a href="https://travis-ci.org/minad/moneta">Moneta benchmarks</a>,
       where Daybreak is compared to virtually all existing key/value stores. It seems to be the fastest persistent
       database from all the Moneta backends.
+<pre>
+=============================================================================
+Summary uniform_medium: 3 runs, 1000 keys
+=============================================================================
+                         Minimum  Maximum    Total     Mean   Stddev    Ops/s
+Memory            sum         17       19       55       18        0    53725
+Daybreak          sum         20       26       68       22        2    44036
+LevelDB           sum         40       44      129       43        1    23176
+TDB               sum         40       53      148       49        6    20192
+GDBM              sum         39       70      151       50       14    19832
+DBM               sum         38       77      171       57       16    17491
+LRUHash           sum         56       99      211       70       20    14177
+Sqlite            sum        134      167      438      146       15     6845
+File              sum        333      444     1190      396       46     2519
+HashFile          sum        471      494     1451      483        9     2066
+Redis             sum        656      818     2218      739       65     1352
+MemcachedDalli    sum        700     1051     2532      844      150     1184
+MemcachedNative   sum        822      979     2661      887       66     1127
+Client            sum        906      970     2814      938       26     1065
+Sequel            sum       2090     2635     6992     2330      227      429
+Mongo             sum       2053     2704     7108     2369      265      422
+DataMapper        sum       7984    11287    27909     9303     1428      107
+Couch             sum      15481    18786    51336    17112     1349       58
+Riak              sum      15597    22437    56838    18946     2794       52
+PStore            sum      15975    26684    59356    19785     4887       50
+ActiveRecord      sum      27526    32525    89807    29935     2044       33
+RestClient        sum     122103   122781   367042   122347      307        8
+</pre>
     </p>
 
     <h2>Change Log</h2>
 
     <dl>
+      <dd><b>0.2.3</b></dd>
+      <dt>Fix a bug with utf-8 strings (thanks <a href="https://github.com/pepe">pepe</a>).</dt>
       <dd><b>0.2.2</b></dd>
       <dt>Move file handling bits to <tt>Journal</tt>, and fix a bug with <tt>compact!</tt>,
         and rename <tt>sync</tt> to <tt>load</tt> (or <tt>sunrise</tt> if you're feeling fun).</dt>
@@ -415,25 +445,28 @@ $ gem install daybreak
     <h2>License</h2>
 
 <pre>
-Copyright (c) 2012, ProPublica
+Copyright (c) 2012 - 2013 ProPublica
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is furnished
-to do so, subject to the following conditions:
+MIT License
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-IN THE SOFTWARE.
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 </pre>
 
     <p><em>Daybreak is a project of ProPublica.</em></p>
