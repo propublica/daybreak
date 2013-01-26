@@ -264,6 +264,7 @@ module Daybreak
           db.close
         rescue Exception => ex
           warn "Failed to close daybreak database: #{ex.message}"
+          break
         end
       end
     end

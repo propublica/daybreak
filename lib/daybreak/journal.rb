@@ -157,7 +157,7 @@ module Daybreak
       end
     rescue Exception => ex
       warn "Daybreak worker: #{ex.message}"
-      retry
+      @fd.close
     end
 
     # Write data to output stream and advance @pos
