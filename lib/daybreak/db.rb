@@ -257,14 +257,13 @@ module Daybreak
     # @private
     def self.exit_handler
       loop do
-        db = @@databases_mutex.synchronize { @@databases.first }
+        db = @@databases_mutex.synchronize { @@databases.shift }
         break unless db
         warn "Daybreak database #{db.file} was not closed, state might be inconsistent"
         begin
           db.close
         rescue Exception => ex
           warn "Failed to close daybreak database: #{ex.message}"
-          break
         end
       end
     end
