@@ -138,26 +138,29 @@ module Daybreak
 
     # Worker thread
     def worker
-      loop do
-        case record = first
-        when Hash
-          # Write batch update
-          write(dump(record))
-          @size += record.size
-        when nil
+      while (record = first)
+        begin
+          if Hash === record
+            # Write batch update
+            write(dump(record))
+            @size += record.size
+          else
+            # Write single record
+            record[1] = @serializer.dump(record.last) if record.size > 1
+            write(@format.dump(record))
+            @size += 1
+          end
+        rescue Exception => ex
+          tries ||= 0
+          tries += 1
+          warn "Daybreak worker, try #{tries}: #{ex.message}"
+          tries <= 3 ? retry : raise
+        ensure
           pop
-          break
-        else
-          # Write single record
-          record[1] = @serializer.dump(record.last) if record.size > 1
-          write(@format.dump(record))
-          @size += 1
         end
-        pop
       end
     rescue Exception => ex
-      warn "Daybreak worker: #{ex.message}"
-      retry # in case the error occurs only once, better behaviour than terminating the thread
+      warn "Daybreak worker terminated: #{ex.message}"
     end
 
     # Write data to output stream and advance @pos
