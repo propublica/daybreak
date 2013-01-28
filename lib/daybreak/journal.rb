@@ -139,6 +139,7 @@ module Daybreak
     # Worker thread
     def worker
       while (record = first)
+        tries = 0
         begin
           if Hash === record
             # Write batch update
@@ -151,7 +152,6 @@ module Daybreak
             @size += 1
           end
         rescue Exception => ex
-          tries ||= 0
           tries += 1
           warn "Daybreak worker, try #{tries}: #{ex.message}"
           tries <= 3 ? retry : raise
