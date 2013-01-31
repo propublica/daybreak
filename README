@@ -9,4 +9,4 @@ Daybreak is faster than any other ruby options like pstore and dbm.
 
 $ gem install daybreak
 
-You find a detailed documentation at http://propublica.github.com/daybreak.
+You find detailed documentation at http://propublica.github.com/daybreak.
