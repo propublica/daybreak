@@ -66,13 +66,12 @@ module Daybreak
       load
       with_tmpfile do |path, file|
         # Compactified database has the same size -> return
-        bytes = file.write(dump(yield, @format.header))
-        return self if @pos == bytes
+        return self if @pos == file.write(dump(yield, @format.header))
         with_flock(File::LOCK_EX) do
           # Database was replaced (cleared or compactified) in the meantime
           if @pos != nil
             # Append changed journal records if the database changed during compactification
-            file.write(@fd.read)
+            file.write(read)
             file.close
             File.rename(path, @file)
           end
@@ -89,7 +88,11 @@ module Daybreak
 
     private
 
-
+    # Emit records as we parse them
+    def replay
+      buf = read
+      @size += @format.parse(buf, &@emit)
+    end
 
     # Open or reopen file
     def open
@@ -103,23 +106,20 @@ module Daybreak
     end
 
     # Read new file content
-    def replay
+    def read
       with_flock(File::LOCK_SH) do
         # File was opened
         unless @pos
           @fd.pos = 0
-          @pos = 0
           @format.read_header(@fd)
           @size = 0
           @emit.call(nil)
         else
           @fd.pos = @pos
         end
-        until @fd.eof?
-          @emit.call(@format.parse(@fd))
-          @size += 1
-        end
+        buf = @fd.read
         @pos = @fd.pos
+        buf
       end
     end
 

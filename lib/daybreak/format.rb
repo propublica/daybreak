@@ -34,13 +34,22 @@ module Daybreak
 
     # Deserialize record from buffer
     # @param [String] buf the buffer to read from
-    # @return [Array] deserialized record [key, value] or [key] if the record is deleted
+    # @yield [Array] blk deserialized record [key, value] or [key] if the record is deleted
+    # @return [Fixnum] number of records
     def parse(buf)
-      size = buf.read(8)
-      key_size, value_size = size.unpack('NN')
-      data = buf.read(key_size + (value_size == DELETE ? 0 : value_size))
-      raise 'CRC mismatch: your data might be corrupted!' unless buf.read(4) == crc32(size + data)
-      value_size == DELETE ? [data[0, key_size]] : [data[0, key_size], data[key_size, value_size]]
+      n, count = 0, 0
+      while n < buf.size
+        key_size, value_size = buf[n, 8].unpack('NN')
+        data_size = key_size + 8
+        data_size += value_size if value_size != DELETE
+        data = buf[n, data_size]
+        n += data_size
+        raise 'CRC mismatch: your data might be corrupted!' unless buf[n, 4] == crc32(data)
+        n += 4
+        yield(value_size == DELETE ? [data[8, key_size]] : [data[8, key_size], data[8 + key_size, value_size]])
+        count += 1
+      end
+      count
     end
 
     protected
