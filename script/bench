@@ -71,8 +71,8 @@ end
 # end
 
 run Hash.new
-db = Daybreak::DB.new DB_PATH
-run db
+# db = Daybreak::DB.new DB_PATH
+# run db
 
 # db = Daybreak::DB.new DB_PATH
 # run db, 'with lock' do
@@ -111,7 +111,6 @@ run db
 puts "Read performance"
 db = Daybreak::DB.new DB_PATH
 DATA.each {|i| db[i] = i }
-db.flush
-report RUNS.times.map { Benchmark.measure { db = Daybreak::DB.new DB_PATH; db.close }.real * 1000 }
+report RUNS.times.map { Benchmark.measure { db1 = Daybreak::DB.new DB_PATH; db1.close }.real * 1000 }
 db.clear
-
+db.close
