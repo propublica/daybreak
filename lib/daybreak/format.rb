@@ -40,7 +40,7 @@ module Daybreak
       key_size, value_size = size.unpack('NN')
       data = buf.read(key_size + (value_size == DELETE ? 0 : value_size))
       raise 'CRC mismatch: your data might be corrupted!' unless buf.read(4) == crc32(size + data)
-      value_size == DELETE ? [data[key_size]] : [data[key_size], data[key_size, value_size]]
+      value_size == DELETE ? [data[0, key_size]] : [data[0, key_size], data[key_size, value_size]]
     end
 
     protected
