@@ -90,11 +90,7 @@ module Daybreak
 
     # Emit records as we parse them
     def replay
-      buf = read
-      until buf.empty?
-        @emit.call(@format.parse(buf))
-        @size += 1
-      end
+      read
     end
 
     # Open or reopen file
@@ -120,9 +116,11 @@ module Daybreak
         else
           @fd.pos = @pos
         end
-        buf = @fd.read
+        until @fd.eof?
+          @emit.call(@format.parse(@fd))
+          @size += 1
+        end
         @pos = @fd.pos
-        buf
       end
     end
 

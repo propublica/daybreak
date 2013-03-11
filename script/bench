@@ -56,53 +56,62 @@ def report(samples)
   puts '95%% < %.4f ms' % samples.slice((samples.length * 0.95).to_i)
 end
 
-begin
-  require 'dbm'
-  run DBM.new(DB_PATH + '.dbm')
-rescue Exception => ex
-  puts "DBM not benchmarked: #{ex.message}"
-end
+# begin
+#   require 'dbm'
+#   run DBM.new(DB_PATH + '.dbm')
+# rescue Exception => ex
+#   puts "DBM not benchmarked: #{ex.message}"
+# end
 
-begin
-  require 'gdbm'
-  run GDBM.new(DB_PATH + '.gdbm')
-rescue Exception => ex
-  puts "GDBM not benchmarked: #{ex.message}"
-end
+# begin
+#   require 'gdbm'
+#   run GDBM.new(DB_PATH + '.gdbm')
+# rescue Exception => ex
+#   puts "GDBM not benchmarked: #{ex.message}"
+# end
 
 run Hash.new
 db = Daybreak::DB.new DB_PATH
 run db
 
-db = Daybreak::DB.new DB_PATH
-run db, 'with lock' do
-  DATA.each do |i|
-    db.lock { db[i] = i }
-  end
-  DATA.each do |i|
-    db.lock { $errors += 1 unless db[i] == i }
-  end
-end
+# db = Daybreak::DB.new DB_PATH
+# run db, 'with lock' do
+#   DATA.each do |i|
+#     db.lock { db[i] = i }
+#   end
+#   DATA.each do |i|
+#     db.lock { $errors += 1 unless db[i] == i }
+#   end
+# end
 
-db = Daybreak::DB.new DB_PATH
-run db, 'with load' do
-  DATA.each do |i|
-    db[i] = i
-    db.sunrise
-  end
-  DATA.each do |i|
-    $errors += 1 unless db[i] == i
-    db.sunrise
-  end
-end
+# db = Daybreak::DB.new DB_PATH
+# run db, 'with load' do
+#   DATA.each do |i|
+#     db[i] = i
+#     db.sunrise
+#   end
+#   DATA.each do |i|
+#     $errors += 1 unless db[i] == i
+#     db.sunrise
+#   end
+# end
 
-hash = DATA.reduce({}) {|m, v| m.merge! v => v }
-db = Daybreak::DB.new DB_PATH
-run db, 'bulk updates' do
-  db.update hash
-end
+# hash = DATA.reduce({}) {|m, v| m.merge! v => v }
+# db = Daybreak::DB.new DB_PATH
+# run db, 'bulk updates' do
+#   db.update hash
+# end
 
+# db = Daybreak::DB.new DB_PATH
+# run db, 'bulk updates, synced' do
+#   db.update! hash
+# end
+
+# reads
+puts "Read performance"
 db = Daybreak::DB.new DB_PATH
-run db, 'bulk updates, synced' do
-  db.update! hash
-end
+DATA.each {|i| db[i] = i }
+db.flush
+report RUNS.times.map { Benchmark.measure { db = Daybreak::DB.new DB_PATH; db.close }.real * 1000 }
+db.clear
+
