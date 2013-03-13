@@ -404,6 +404,13 @@ describe Daybreak::DB do
     db.close
   end
 
+  it 'should keep the same format' do
+    db = Daybreak::DB.new DB_PATH, :serializer => Daybreak::Serializer::None
+    10.times {|i| db[i.to_s] = i.to_s }
+    db.close
+    assert_equal File.read(DB_PATH), File.read(File.join(HERE, 'mock.db-test'))
+  end
+
   after do
     @db.clear
     @db.close
