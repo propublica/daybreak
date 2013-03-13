@@ -32,7 +32,7 @@ module Daybreak
       data << crc32(data)
     end
 
-    # Deserialize record from buffer
+    # Deserialize records from buffer, and yield them.
     # @param [String] buf the buffer to read from
     # @yield [Array] blk deserialized record [key, value] or [key] if the record is deleted
     # @return [Fixnum] number of records
