@@ -106,3 +106,11 @@ db = Daybreak::DB.new DB_PATH
 run db, 'bulk updates, synced' do
   db.update! hash
 end
+
+# reads
+puts "Read performance"
+db = Daybreak::DB.new DB_PATH
+DATA.each {|i| db[i] = i }
+report RUNS.times.map { Benchmark.measure { db1 = Daybreak::DB.new DB_PATH; db1.close }.real * 1000 }
+db.clear
+db.close

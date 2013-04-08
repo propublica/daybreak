@@ -20,7 +20,7 @@ module Daybreak
     # @yieldparam [String] key the key to be stored.
     def initialize(file, options = {}, &block)
       @serializer = (options[:serializer] || Serializer::Default).new
-      @table = Hash.new &method(:hash_default)
+      @table = Hash.new(&method(:hash_default))
       @journal = Journal.new(file, (options[:format] || Format).new, @serializer) do |record|
         if !record
           @table.clear
@@ -201,7 +201,7 @@ module Daybreak
     # @yieldparam [DB] db
     # @return result of the block
     def lock
-      @mutex.synchronize { @journal.lock { yield self } }
+      synchronize { @journal.lock { yield self } }
     end
 
     # Synchronize access to the database from multiple threads

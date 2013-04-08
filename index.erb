@@ -415,6 +415,12 @@ RestClient        sum     122103   122781   367042   122347      307        8
     <h2>Change Log</h2>
 
     <dl>
+      <dd><b>0.3.0</b></dd>
+      <dt>
+        Speed up read performance, and a slight change to <tt>Daybreak::Format</tt>
+        which now is responsible for reading the entire database in one go, and
+        yielding records as they are parsed.
+      </dt>
       <dd><b>0.2.4</b></dd>
       <dt>Fix possible infinite loops when the worker thread thows an error.</dt>
       <dd><b>0.2.3</b></dd>
