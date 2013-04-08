@@ -111,6 +111,7 @@ end
 puts "Read performance"
 db = Daybreak::DB.new DB_PATH
 DATA.each {|i| db[i] = i }
+db.flush
 report RUNS.times.map { Benchmark.measure { db1 = Daybreak::DB.new DB_PATH; db1.close }.real * 1000 }
 db.clear
 db.close
