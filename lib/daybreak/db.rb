@@ -233,6 +233,7 @@ module Daybreak
     # Close the database for reading and writing.
     # @return nil
     def close
+      return nil if self.closed?
       @journal.close
       @@databases_mutex.synchronize { @@databases.delete(self) }
       nil
