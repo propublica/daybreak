@@ -59,7 +59,7 @@ module Daybreak
     alias_method :get, '[]'
 
     # Set a key in the database to be written at some future date. If the data
-    # needs to be persisted immediately, call <tt>db.set(key, value, true)</tt>.
+    # needs to be persisted immediately, call <tt>db.set!(key, value)</tt>.
     # @param [Object] key the key of the storage slot in the database
     # @param [Object] value the value to store
     # @return [Object] the value
