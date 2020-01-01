@@ -12,7 +12,7 @@ describe Daybreak::DB do
   end
 
   it 'should insert' do
-    assert_equal @db[1], nil
+    assert_nil @db[1]
     assert_equal @db.include?(1), false
     @db[1] = 1
     assert_equal @db[1], 1
@@ -45,7 +45,7 @@ describe Daybreak::DB do
     db = Daybreak::DB.new DB_PATH
     assert_equal db['1'], '4'
     assert_equal db['4'], '1'
-    assert_equal db.close, nil
+    assert_nil db.close
   end
 
   it 'should persist after batch update' do
@@ -54,7 +54,7 @@ describe Daybreak::DB do
     db = Daybreak::DB.new DB_PATH
     assert_equal db[1], :a
     assert_equal db[2], :b
-    assert_equal db.close, nil
+    assert_nil db.close
   end
 
   it 'should persist after clear' do
@@ -62,7 +62,7 @@ describe Daybreak::DB do
     assert_equal @db.clear, @db
     @db['1'] = '4'
     @db['4'] = '1'
-    assert_equal @db.close, nil
+    assert_nil @db.close
 
     @db = Daybreak::DB.new DB_PATH
     assert_equal @db['1'], '4'
@@ -75,7 +75,7 @@ describe Daybreak::DB do
     assert_equal @db.compact, @db
     @db['1'] = '4'
     @db['4'] = '1'
-    assert_equal @db.close, nil
+    assert_nil @db.close
 
     @db = Daybreak::DB.new DB_PATH
     assert_equal @db['1'], '4'
@@ -172,7 +172,7 @@ describe Daybreak::DB do
     20.times {|i| @db[i] = i }
     @db.clear
     db = Daybreak::DB.new DB_PATH
-    assert_equal nil, db['19']
+    assert_nil db['19']
     db.close
   end
 
@@ -181,11 +181,11 @@ describe Daybreak::DB do
     @db['two'] = 2
     @db.delete! 'two'
     assert !@db.has_key?('two')
-    assert_equal @db['two'], nil
+    assert_nil @db['two']
 
     db = Daybreak::DB.new DB_PATH
     assert !db.has_key?('two')
-    assert_equal db['two'], nil
+    assert_nil db['two']
     db.close
   end
 
@@ -199,7 +199,7 @@ describe Daybreak::DB do
     @db.compact
     db.sunrise
     assert !db.has_key?('two')
-    assert_equal db['two'], nil
+    assert_nil db['two']
     db.close
   end
 
